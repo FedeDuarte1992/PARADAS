@@ -1,675 +1,826 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Asistencia y Salario</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador de Paradas - Máquina Adulto 4 | Hisan S.A.</title>
+  <style>
+    /* CSS: Estilos modernos y responsivos */
+    :root {
+      --primary: #1f4e78;
+      --secondary: #2f5597;
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #d9d9d9;
+      --accent: #28a745;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+    }
+
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      margin-bottom: 5px;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      opacity: 0.85;
+    }
+
+    /* Panel de Búsqueda y Filtros */
+    .search-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+      background: #eef2f7;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #dcdfe6;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: var(--primary);
+    }
+
+    .filter-group input,
+    .filter-group select {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+      border-color: var(--secondary);
+    }
+
+    .btn-reset {
+      grid-column: 1 / -1;
+      padding: 10px;
+      background-color: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-reset:hover {
+      background-color: var(--primary);
+    }
+
+    .status-bar {
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Tabla de Resultados */
+    .table-container {
+      overflow-x: auto;
+      max-height: 600px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background-color: var(--secondary);
+      color: white;
+      padding: 12px;
+      font-size: 0.95rem;
+      z-index: 2;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    tbody tr:hover {
+      background-color: #e8f0fe;
+    }
+
+    .badge-id {
+      background-color: var(--primary);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 30px;
+      color: #888;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 15px; }
+      header h1 { font-size: 1.2rem; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Control de Asistencia y Salario</h1>
 
-        <div id="quincena-display">
-            <p>Calculando salario de quincena...</p>
-        </div>
+  <div class="container">
+    <header>
+      <h1>Hisan S.A. - Codificación de Paradas</h1>
+      <p>Máquina Adulto 4 (Códigos 4000 a 4500)</p>
+    </header>
 
-        <div id="editing-message">
-            Estás editando el día: <span id="editing-date-display"></span>. Por favor, selecciona la información correcta.
-            <div class="btn-group">
-                <button class="secondary" onclick="cancelEditing()">Cancelar Edición</button>
-                <button class="delete-btn" id="delete-record-btn" onclick="deleteRecord()">Eliminar Registro</button>
-            </div>
-        </div>
+    <!-- Controles de Búsqueda -->
+    <div class="search-panel">
+      <div class="filter-group">
+        <label for="searchGeneral">Búsqueda General</label>
+        <input type="text" id="searchGeneral" placeholder="Buscar en todo...">
+      </div>
 
-        <div id="step-select-turno" class="step-box">
-            <p>¿En qué turno estás trabajando hoy?</p>
-            <div class="btn-group">
-                <button class="secondary" onclick="selectTurno('manana')">Mañana (06hs)</button>
-                <button class="secondary" onclick="selectTurno('tarde')">Tarde (14hs)</button>
-                <button class="secondary" onclick="selectTurno('noche')">Noche (22hs)</button>
-            </div>
-        </div>
+      <div class="filter-group">
+        <label for="searchSector">Filtrar por Sector</label>
+        <select id="searchSector">
+          <option value="">-- Todos los sectores --</option>
+        </select>
+      </div>
 
-        <div id="step-fichaje-status" class="step-box" style="display: none;">
-            <p>¿Fichaste temprano o tarde?</p>
-            <div class="btn-group">
-                <button onclick="fichajeStatus('temprano')">Temprano</button>
-                <button class="late" onclick="fichajeStatus('tarde')">Tarde</button>
-            </div>
-        </div>
+      <div class="filter-group">
+        <label for="searchID">Filtrar por ID Parada</label>
+        <input type="text" id="searchID" placeholder="Ej: 4010">
+      </div>
 
-        <div id="step-input-hora" class="step-box" style="display: none;">
-            <p>Ingresa la hora exacta de tu ingreso:</p>
-            <div class="input-group">
-                <input type="time" id="input-hora-ingreso">
-            </div>
-            <div class="btn-group">
-                <button onclick="registerCustomEntryTime()">Registrar Hora</button>
-            </div>
-        </div>
+      <div class="filter-group">
+        <label for="searchMotivo">Filtrar por Motivo</label>
+        <input type="text" id="searchMotivo" placeholder="Ej: correa, celulosa...">
+      </div>
 
-        <div id="step-select-category" class="step-box" style="display: none;">
-            <p>Por favor, selecciona tu categoría:</p>
-            <div class="btn-group">
-                <button class="category" onclick="selectCategory('A')">A</button>
-                <button class="category" onclick="selectCategory('B')">B</button>
-                <button class="category" onclick="selectCategory('C')">C</button>
-                <button class="category" onclick="selectCategory('D')">D</button>
-                <button class="category" onclick="selectCategory('E')">E</button>
-                <button class="category" onclick="selectCategory('F')">F</button>
-                <button class="category" onclick="selectCategory('G')">G</button>
-                <button class="category" onclick="selectCategory('H')">H</button>
-            </div>
-        </div>
-
-        <div id="step-extra-hours" class="step-box" style="display: none;">
-            <p>¿Realizaste horas extras hoy?</p>
-            <div class="btn-group">
-                <button onclick="handleExtraHours(true)">Sí</button>
-                <button class="secondary" onclick="handleExtraHours(false)">No</button>
-            </div>
-            <div class="input-group" id="extra-hours-input-group" style="display: none;">
-                <label for="input-extra-hours">¿Cuántas horas extras?</label>
-                <input type="number" id="input-extra-hours" min="1" max="16" value="1">
-                <button onclick="registerExtraHours()">Confirmar Extras</button>
-            </div>
-        </div>
-        
-        <p id="result"></p>
-
-        <div id="history">
-            <h2>Historial de Registros</h2>
-            <ul id="history-list">
-                </ul>
-        </div>
+      <button class="btn-reset" onclick="resetFilters()">Limpiar Filtros</button>
     </div>
 
-    <div class="calendar-container">
-        <div class="calendar-header">
-            <button onclick="changeMonth(-1)">&#9664;</button>
-            <h3 id="current-month-year"></h3>
-            <button onclick="changeMonth(1)">&#9654;</button>
-        </div>
-        <div class="calendar-grid" id="calendar-weekdays">
-            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
-        </div>
-        <div class="calendar-grid" id="calendar-days">
-            </div>
+    <!-- Barra de Estado -->
+    <div class="status-bar">
+      <span>Mostrando: <strong id="countDisplay">0</strong> registros</span>
     </div>
 
-    <script>
-        // Elementos del DOM
-        const stepSelectTurno = document.getElementById('step-select-turno');
-        const stepFichajeStatus = document.getElementById('step-fichaje-status');
-        const stepInputHora = document.getElementById('step-input-hora');
-        const inputHoraIngreso = document.getElementById('input-hora-ingreso');
-        const stepSelectCategory = document.getElementById('step-select-category');
-        const stepExtraHours = document.getElementById('step-extra-hours');
-        const extraHoursInputGroup = document.getElementById('extra-hours-input-group');
-        const inputExtraHours = document.getElementById('input-extra-hours');
-        const resultDisplay = document.getElementById('result');
-        const historyList = document.getElementById('history-list');
-        const quincenaDisplay = document.getElementById('quincena-display');
-        const editingMessage = document.getElementById('editing-message');
-        const editingDateDisplay = document.getElementById('editing-date-display');
-        const deleteRecordBtn = document.getElementById('delete-record-btn');
-
-        const currentMonthYearDisplay = document.getElementById('current-month-year');
-        const calendarDaysGrid = document.getElementById('calendar-days');
-
-        // Variables de estado global
-        let selectedTurno = null;
-        let entryTime = null;
-        let selectedCategory = null;
-        let extraHoursMade = 0;
-
-        let editingDateKey = null;
-        let isEditingMode = false;
-
-        let currentCalendarDate = new Date();
-
-        // *** VALORES DE CONFIGURACIÓN - ¡AJUSTA ESTOS VALORES A TUS NECESIDADES! ***
-        const JORNADA_HORAS = 8;
-
-        const TABLA_SALARIAL = {
-            'A': {
-                'Junio': 2750, 'Julio': 2804, 'Agosto': 2858, 'Septiembre': 2912, 'Octubre': 2966, 'Noviembre': 3020
-            },
-            'B': {
-                'Junio': 2800, 'Julio': 2855, 'Agosto': 2910, 'Septiembre': 2965, 'Octubre': 3020, 'Noviembre': 3074
-            },
-            'C': {
-                'Junio': 2854, 'Julio': 2910, 'Agosto': 2966, 'Septiembre': 3022, 'Octubre': 3078, 'Noviembre': 3134
-            },
-            'D': {
-                'Junio': 2905, 'Julio': 2962, 'Agosto': 3019, 'Septiembre': 3076, 'Octubre': 3133, 'Noviembre': 3190
-            },
-            'E': {
-                'Junio': 2964, 'Julio': 3022, 'Agosto': 3080, 'Septiembre': 3138, 'Octubre': 3197, 'Noviembre': 3255
-            },
-            'F': {
-                'Junio': 3021, 'Julio': 3080, 'Agosto': 3140, 'Septiembre': 3199, 'Octubre': 3258, 'Noviembre': 3317
-            },
-            'G': {
-                'Junio': 3115, 'Julio': 3176, 'Agosto': 3237, 'Septiembre': 3298, 'Octubre': 3359, 'Noviembre': 3420
-            },
-            'H': {
-                'Junio': 3182, 'Julio': 3245, 'Agosto': 3307, 'Septiembre': 3370, 'Octubre': 3432, 'Noviembre': 3494
-            }
-        [span_0](start_span)};[span_0](end_span)
-
-        const SUMA_NO_REMUN = {
-            'Junio': 210000 + 105000,
-            'Julio': 210000,
-            'Agosto': 210000,
-            'Septiembre': 210000,
-            'Octubre': 210000,
-            'Noviembre': 210000
-        [span_1](start_span)};[span_1](end_span)
-
-        [span_2](start_span)// Tabla de Bonificación por Antigüedad[span_2](end_span)
-        // NOTA: La tabla proporcionada para antigüedad está incompleta (faltan Agosto, Octubre, Noviembre).
-        // Si un mes no tiene datos, se usará 0 como bonificación.
-        const TABLA_ANTIGUEDAD = {
-            '1 años': {'Junio': 25, 'Julio': 27, 'Septiembre': 28},
-            '3 años': {'Junio': 37, 'Julio': 39, 'Septiembre': 41},
-            '5 años': {'Junio': 50, 'Julio': 53, 'Septiembre': 56},
-            '7 años': {'Junio': 68, 'Julio': 72, 'Septiembre': 76},
-            '9 años': {'Junio': 81, 'Julio': 86, 'Septiembre': 91},
-            '12 años': {'Junio': 108, 'Julio': 114, 'Septiembre': 121},
-            '15 años': {'Junio': 130, 'Julio': 138, 'Septiembre': 146},
-            '18 años': {'Junio': 152, 'Julio': 161, 'Septiembre': 170},
-            '22 años': {'Junio': 175, 'Julio': 186, 'Septiembre': 196},
-            '26 años': {'Junio': 198, 'Julio': 210, 'Septiembre': 222},
-            '30 años': {'Junio': 217, 'Julio': 230, 'Septiembre': 243},
-            '35 años': {'Junio': 238, 'Julio': 252, 'Septiembre': 267},
-            '40 años': {'Junio': 261, 'Julio': 277, 'Septiembre': 292}
-        }; 
-
-        const ANTIGUEDAD_ANOS = 5; // <--- CONFIGURAR: Tus años de antigüedad para la bonificación. (Ej: 5)
-
-        const HORAS_ESTANDAR_INGRESO = {
-            'manana': '06:00',
-            'tarde': '14:00',
-            'noche': '22:00'
-        };
-
-        const MONTH_NAMES = [
-            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-        ];
-
-        const workRecords = JSON.parse(localStorage.getItem('workRecords')) || {};
-        // **********************************************
-
-        // Helper para formatear moneda sin decimales y con separador de miles
-        function formatCurrency(number) {
-            if (typeof number !== 'number') {
-                return number;
-            }
-            return new Intl.NumberFormat('es-AR', {
-                style: 'currency',
-                currency: 'ARS',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(number);
-        }
-
-        // Función para obtener la bonificación por antigüedad
-        function getBonificacionAntiguedad(antiguedad_anos, currentMonthName) {
-            const antiguedadKey = `${antiguedad_anos} años`;
-            if (TABLA_ANTIGUEDAD[antiguedadKey] && TABLA_ANTIGUEDAD[antiguedadKey][currentMonthName]) {
-                return TABLA_ANTIGUEDAD[antiguedadKey][currentMonthName];
-            }
-            [span_3](start_span)console.warn(`No se encontró bonificación por antigüedad para ${antiguedadKey} en ${currentMonthName}.[span_3](end_span)`);
-            return 0; // Si no se encuentra, la bonificación es 0
-        }
-
-        // Función para ocultar todos los pasos de entrada
-        function hideAllSteps() {
-            stepSelectTurno.style.display = 'none';
-            stepFichajeStatus.style.display = 'none';
-            stepInputHora.style.display = 'none';
-            stepSelectCategory.style.display = 'none';
-            stepExtraHours.style.display = 'none';
-            extraHoursInputGroup.style.display = 'none';
-            editingMessage.style.display = 'none';
-        }
-
-        // Función para seleccionar el turno (Paso 1)
-        function selectTurno(turno) {
-            selectedTurno = turno;
-            hideAllSteps();
-            stepFichajeStatus.style.display = 'block';
-            resultDisplay.textContent = `Turno seleccionado: ${turno.charAt(0).toUpperCase() + turno.slice(1)}.`;
-        }
-
-        // Función para manejar el estado del fichaje (temprano/tarde) (Paso 2)
-        function fichajeStatus(status) {
-            let dateToUse;
-            if (isEditingMode && editingDateKey) {
-                // Si estamos editando, usamos la fecha del día seleccionado en el calendario (a mediodía local)
-                const [year, month, day] = editingDateKey.split('-').map(Number);
-                dateToUse = new Date(year, month - 1, day, 12, 0, 0); 
-            } else {
-                // Si no estamos editando, usamos la fecha y hora actuales
-                dateToUse = new Date();
-            }
-
-            if (status === 'temprano') {
-                const standardTime = HORAS_ESTANDAR_INGRESO[selectedTurno];
-                const [hours, minutes] = standardTime.split(':').map(Number);
-                
-                // Crea entryTime usando la fecha base y la hora estándar del turno
-                entryTime = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), hours, minutes, 0);
-
-                hideAllSteps();
-                stepSelectCategory.style.display = 'block';
-                resultDisplay.textContent = '¡Ingreso registrado! Ahora, selecciona tu categoría.';
-
-            } else { // Si es 'tarde'
-                hideAllSteps();
-                stepInputHora.style.display = 'block';
-                resultDisplay.textContent = 'Por favor, ingresa la hora exacta en la que ingresaste (Ej: 06:15).';
-            }
-        }
-
-        // Función para registrar la hora de ingreso personalizada (cuando fichó tarde) (Paso 2b)
-        function registerCustomEntryTime() {
-            const customTime = inputHoraIngreso.value;
-            if (!customTime) {
-                alert('Por favor, ingresa una hora válida (Ej: 06:15).');
-                return;
-            }
-
-            let dateToUse;
-            if (isEditingMode && editingDateKey) {
-                // Si estamos editando, usamos la fecha del día seleccionado en el calendario (a mediodía local)
-                const [year, month, day] = editingDateKey.split('-').map(Number);
-                dateToUse = new Date(year, month - 1, day, 12, 0, 0); 
-            } else {
-                // Si no estamos editando, usamos la fecha y hora actuales
-                dateToUse = new Date();
-            }
-
-            const [hours, minutes] = customTime.split(':').map(Number);
-            
-            // Crea entryTime usando la fecha base y la hora personalizada
-            entryTime = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), hours, minutes, 0); 
-
-            hideAllSteps();
-            stepSelectCategory.style.display = 'block';
-            resultDisplay.textContent = 'Hora de ingreso personalizada registrada. Ahora, selecciona tu categoría.';
-        }
-
-        // Función para seleccionar la categoría (Paso 3)
-        function selectCategory(category) {
-            selectedCategory = category;
-            hideAllSteps();
-            stepExtraHours.style.display = 'block';
-            resultDisplay.textContent = `Categoría seleccionada: ${category}. ¿Realizaste horas extras?`;
-        }
-
-        // Función para manejar las horas extras (Paso 4)
-        function handleExtraHours(hasExtras) {
-            if (hasExtras) {
-                extraHoursInputGroup.style.display = 'block';
-                resultDisplay.textContent = 'Por favor, ingresa la cantidad de horas extras realizadas.';
-            } else {
-                extraHoursMade = 0;
-                recordAttendance();
-            }
-        }
-
-        // Función para registrar la cantidad de horas extras
-        function registerExtraHours() {
-            const hours = parseInt(inputExtraHours.value);
-            if (isNaN(hours) || hours <= 0) {
-                alert('Por favor, ingresa un número válido de horas extras.');
-                return;
-            }
-            extraHoursMade = hours;
-            recordAttendance();
-        }
-
-        // Función principal para registrar asistencia y calcular salario
-        function recordAttendance() {
-            let recordDayDate;
-            if (isEditingMode && editingDateKey) {
-                // Si estamos en modo edición, usamos la fecha del día seleccionado en el calendario
-                const [year, month, day] = editingDateKey.split('-').map(Number);
-                recordDayDate = new Date(year, month - 1, day, 12, 0, 0); // Crear a mediodía local para evitar problemas de zona horaria
-            } else {
-                // Si no estamos en modo edición, usamos la fecha y hora de entryTime (que ya viene bien del formulario)
-                recordDayDate = entryTime || new Date();
-            }
-            
-            if (!selectedTurno || !selectedCategory || !entryTime) {
-                resultDisplay.textContent = 'Error: Faltan datos para el registro. Por favor, completa todos los pasos.';
-                if (!isEditingMode) {
-                    resetInterface();
-                }
-                return;
-            }
-
-            const currentMonthIndex = recordDayDate.getMonth(); // Usamos recordDayDate para obtener el mes
-            const currentMonthName = MONTH_NAMES[currentMonthIndex];
-
-            [span_4](start_span)const valorHoraBase = TABLA_SALARIAL[selectedCategory]?.[currentMonthName];[span_4](end_span)
-            [span_5](start_span)const bonificacionPorAntiguedad = getBonificacionAntiguedad(ANTIGUEDAD_ANOS, currentMonthName);[span_5](end_span)
-
-            if (valorHoraBase === undefined) {
-                resultDisplay.textContent = `Error: No se encontraron datos salariales para la categoría ${selectedCategory} en el mes de ${currentMonthName}. [span_6](start_span)Por favor, verifica la configuración.[span_6](end_span)`;
-                if (!isEditingMode) {
-                    resetInterface();
-                }
-                return;
-            }
-            
-            // Cálculo del salario diario base: (valor hora + antigüedad) x 8 horas
-            const salarioPorHora = valorHoraBase + bonificacionPorAntiguedad;
-            const salarioDiarioSinNoRemun = JORNADA_HORAS * salarioPorHora; // Este es el salario diario sin el no remunerativo ni extras
-
-            let salarioDiarioSoloHorasYExtras = salarioDiarioSinNoRemun; // Salario para calcular extras y luego presentismo
-
-            let extraHoursInfo = "";
-            if (extraHoursMade > 0) {
-                const valorHoraExtra = salarioPorHora * 1.5; // Las horas extras también usan el nuevo salarioPorHora
-                salarioDiarioSoloHorasYExtras += (extraHoursMade * valorHoraExtra);
-                extraHoursInfo = ` (+${extraHoursMade}hs extras)`;
-            }
-
-            const formattedEntryTime = entryTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const formattedDate = recordDayDate.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-
-            const standardEntryHours = parseInt(HORAS_ESTANDAR_INGRESO[selectedTurno].split(':')[0]);
-            const standardEntryMinutes = parseInt(HORAS_ESTANDAR_INGRESO[selectedTurno].split(':')[1]);
-            const isEarlyEntry = (entryTime.getHours() < standardEntryHours || (entryTime.getHours() === standardEntryHours && entryTime.getMinutes() <= standardEntryMinutes));
-            const entryStatusText = isEarlyEntry ? 'Temprano' : 'Tarde';
-
-            // El plus diario (no remunerativo) no se incluye aquí, se suma al final en calculateQuincenaTotal
-            const recordText = `Fecha: ${formattedDate} - Ingreso: ${formattedEntryTime} - Estado: ${entryStatusText} - Turno: ${selectedTurno.charAt(0).toUpperCase() + selectedTurno.slice(1)} (${JORNADA_HORAS}hs)${extraHoursInfo} - Categoría: ${selectedCategory} - Valor Hora Base: ${formatCurrency(valorHoraBase)} - Bonificación Antigüedad: ${formatCurrency(bonificacionPorAntiguedad)} - Salario Diario Horas + Extras: ${formatCurrency(salarioDiarioSoloHorasYExtras)}`;
-            
-            resultDisplay.textContent = `¡Registro exitoso! ${recordText}`;
-
-            // Guardar en workRecords los valores separados para el cálculo final
-            saveWorkRecord(recordDayDate, selectedTurno, JORNADA_HORAS, extraHoursMade, formattedEntryTime, selectedCategory, valorHoraBase, bonificacionPorAntiguedad, salarioDiarioSinNoRemun, salarioDiarioSoloHorasYExtras);
-
-            addRecordToHistory(recordText);
-
-            resetInterface();
-            generateCalendar();
-            calculateQuincenaTotal();
-        }
-
-        // --- Funciones del Calendario ---
-        function generateCalendar() {
-            calendarDaysGrid.innerHTML = '';
-
-            const year = currentCalendarDate.getFullYear();
-            const month = currentCalendarDate.getMonth();
-
-            currentMonthYearDisplay.textContent = `${MONTH_NAMES[month]} ${year}`;
-
-            const firstDayOfMonth = new Date(year, month, 1);
-            let startDay = firstDayOfMonth.getDay();
-            if (startDay === 0) startDay = 7;
-            startDay--; // Para que Lunes sea 0
-
-            for (let i = 0; i < startDay; i++) {
-                const emptyDay = document.createElement('div');
-                emptyDay.classList.add('calendar-day');
-                calendarDaysGrid.appendChild(emptyDay);
-            }
-
-            const lastDayOfMonth = new Date(year, month + 1, 0);
-            const daysInMonth = lastDayOfMonth.getDate();
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayElement = document.createElement('div');
-                dayElement.classList.add('calendar-day');
-                
-                const currentDayDate = new Date(year, month, day);
-                const today = new Date();
-
-                if (currentDayDate.toDateString() === today.toDateString()) {
-                    dayElement.classList.add('today');
-                }
-
-                const dayNumberSpan = document.createElement('span');
-                dayNumberSpan.classList.add('day-number');
-                dayNumberSpan.textContent = day;
-                dayElement.appendChild(dayNumberSpan);
-
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                dayElement.setAttribute('data-date-key', dateKey);
-                
-                // Ahora todos los días son clickeables
-                dayElement.addEventListener('click', () => editDayRecord(dateKey));
-
-                if (workRecords[dateKey]) {
-                    dayElement.classList.add('recorded-day'); // Opcional: estilo para días con registro
-                    const record = workRecords[dateKey];
-                    const workedHoursSpan = document.createElement('span');
-                    workedHoursSpan.classList.add('worked-hours');
-                    workedHoursSpan.classList.add(record.turno);
-                    
-                    let displayHours = `${record.entrada} - ${record.salida}`;
-                    if (record.turno === 'noche' && record.entrada.split(':')[0] === HORAS_ESTANDAR_INGRESO.noche.split(':')[0]) {
-                         displayHours += ' (+1 día)';
-                    }
-                    
-                    workedHoursSpan.textContent = `${displayHours} (${record.horas_trabajadas}hs)`;
-                    dayElement.appendChild(workedHoursSpan);
-
-                    if (record.horas_extras > 0) {
-                        const extraHoursSpan = document.createElement('span');
-                        extraHoursSpan.classList.add('worked-hours', 'extra');
-                        extraHoursSpan.textContent = `+${record.horas_extras}hs extras`;
-                        dayElement.appendChild(extraHoursSpan);
-                    }
-                }
-                calendarDaysGrid.appendChild(dayElement);
-            }
-        }
-
-        function changeMonth(delta) {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
-            generateCalendar();
-            calculateQuincenaTotal();
-        }
-
-        function saveWorkRecord(date, turno, jornadaHoras, extraHours, formattedEntryTime, category, valorHoraBase, bonificacionPorAntiguedad, salarioDiarioSinNoRemun, salarioDiarioSoloHorasYExtras) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const dateKey = `${year}-${month}-${day}`;
-
-            let exitDate = new Date(date.getTime());
-            exitDate.setHours(date.getHours() + jornadaHoras, date.getMinutes(), date.getSeconds());
-
-            const formattedExitTime = exitDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-
-            workRecords[dateKey] = {
-                turno: turno,
-                horas_trabajadas: jornadaHoras,
-                horas_extras: extraHours,
-                entrada: formattedEntryTime.substring(0,5),
-                salida: formattedExitTime,
-                category: category,
-                valor_hora_base: valorHoraBase,
-                bonificacion_antiguedad: bonificacionPorAntiguedad,
-                salario_diario_sin_no_remun: salarioDiarioSinNoRemun, // (Valor hora + antigüedad) * 8 horas
-                salario_diario_solo_horas_y_extras: salarioDiarioSoloHorasYExtras, // Incluye horas extras
-                day_of_week: date.getDay()
-            };
-            localStorage.setItem('workRecords', JSON.stringify(workRecords));
-            generateCalendar();
-        }
-
-        function addRecordToHistory(recordText) {
-            const listItem = document.createElement('li');
-            listItem.textContent = recordText;
-            historyList.prepend(listItem);
-        }
-
-        function calculateQuincenaTotal() {
-            const today = new Date();
-            const currentDay = today.getDate();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
-
-            let quincenaStartDate, quincenaEndDate;
-
-            if (currentDay <= 15) {
-                quincenaStartDate = new Date(currentYear, currentMonth, 1, 12, 0, 0); // Mediodía para consistencia
-                quincenaEndDate = new Date(currentYear, currentMonth, 15, 12, 0, 0); // Mediodía para consistencia
-            } else {
-                quincenaStartDate = new Date(currentYear, currentMonth, 16, 12, 0, 0); // Mediodía para consistencia
-                quincenaEndDate = new Date(currentYear, currentMonth + 1, 0, 12, 0, 0); // Mediodía para consistencia
-            }
-
-            let totalSalarioSinNoRemunYPresentismo = 0; // Acumula (valor hora + antigüedad) * 8h + extras
-            let totalSumaNoRemunerativaQuincena = 0; // Acumula la suma no remunerativa
-            let daysWorkedInQuincena = 0;
-
-            for (const dateKey in workRecords) {
-                const [rYear, rMonth, rDay] = dateKey.split('-').map(Number);
-                const recordDateLocalNoon = new Date(rYear, rMonth - 1, rDay, 12, 0, 0);
-
-                if (recordDateLocalNoon >= quincenaStartDate && recordDateLocalNoon <= quincenaEndDate) {
-                    const record = workRecords[dateKey];
-                    
-                    if (record.salario_diario_solo_horas_y_extras !== undefined) {
-                        totalSalarioSinNoRemunYPresentismo += record.salario_diario_solo_horas_y_extras;
-                        daysWorkedInQuincena++;
-                    }
-
-                    // Suma no remunerativa para el mes del registro
-                    const recordMonthIndex = recordDateLocalNoon.getMonth();
-                    const recordMonthName = MONTH_NAMES[recordMonthIndex];
-                    [span_7](start_span)const plusDiarioForDay = SUMA_NO_REMUN[recordMonthName];[span_7](end_span)
-                    if (plusDiarioForDay !== undefined) {
-                        totalSumaNoRemunerativaQuincena += plusDiarioForDay;
-                    } else {
-                        [span_8](start_span)console.warn(`No se encontró Suma no remun. para el mes de ${recordMonthName}.[span_8](end_span)`);
-                    }
-                }
-            }
-
-            // Calcular presentismo sobre el total de horas + extras
-            const presentismoPorcentaje = 0.20; [span_9](start_span)//[span_9](end_span) (asumiendo 0 ausencias por ahora, pendiente de tu confirmación)
-            const montoPresentismo = totalSalarioSinNoRemunYPresentismo * presentismoPorcentaje;
-            const totalSalarioConPresentismo = totalSalarioSinNoRemunYPresentismo + montoPresentismo;
-
-            // Sumar la suma no remunerativa al final
-            const salarioFinalQuincena = totalSalarioConPresentismo + totalSumaNoRemunerativaQuincena;
-
-            quincenaDisplay.innerHTML = `
-                <p><strong>Salario Estimado esta Quincena (${quincenaStartDate.toLocaleDateString('es-AR')} - ${quincenaEndDate.toLocaleDateString('es-AR')})</strong></p>
-                <p>Total de Horas Trabajadas y Horas Extras: <strong>${formatCurrency(totalSalarioSinNoRemunYPresentismo)}</strong></p>
-                <p>Monto de Presentismo (20%): <strong>${formatCurrency(montoPresentismo)}</strong></p>
-                <p>Subtotal con Presentismo: <strong>${formatCurrency(totalSalarioConPresentismo)}</strong></p>
-                <p>Suma No Remunerativa: <strong>${formatCurrency(totalSumaNoRemunerativaQuincena)}</strong></p>
-                <p>Salario Total Estimado de la Quincena: <strong>${formatCurrency(salarioFinalQuincena)}</strong> (${daysWorkedInQuincena} días trabajados)</p>
-            `;
-        }
-
-        // Función para iniciar la edición de un registro de día (o agregar uno nuevo para ese día)
-        function editDayRecord(dateKey) {
-            hideAllSteps(); // Ocultar todos los pasos de entrada normales
-            editingMessage.style.display = 'block'; // Mostrar el mensaje de edición
-
-            // Parse dateKey y crea una fecha a mediodía local para asegurar la fecha correcta en la visualización
-            const [year, month, day] = dateKey.split('-').map(Number);
-            const displayDate = new Date(year, month - 1, day, 12, 0, 0); // Fecha a mediodía local
-
-            editingDateDisplay.textContent = displayDate.toLocaleDateString('es-AR');
-
-            isEditingMode = true;
-            editingDateKey = dateKey; // Mantener la clave string para acceder a workRecords
-
-            const record = workRecords[dateKey];
-
-            if (record) {
-                // Si existe un registro, pre-llenar las variables globales para la edición
-                selectedTurno = record.turno;
-                // Reconstruir entryTime usando la fecha base del registro y la hora guardada
-                const [recordedHours, recordedMinutes] = record.entrada.split(':').map(Number);
-                entryTime = new Date(displayDate.getFullYear(), displayDate.getMonth(), displayDate.getDate(), recordedHours, recordedMinutes, 0);
-                
-                selectedCategory = record.category;
-                extraHoursMade = record.horas_extras;
-                inputHoraIngreso.value = record.entrada; // Pre-llenar el campo de hora si existe
-                inputExtraHours.value = record.horas_extras; // Pre-llenar horas extras
-                resultDisplay.textContent = `Modo edición activado para el día ${displayDate.toLocaleDateString('es-AR')}. Valores actuales cargados.`;
-                deleteRecordBtn.style.display = 'inline-block'; // Mostrar botón de eliminar
-            } else {
-                // Si no existe un registro, reiniciar variables para una nueva entrada
-                selectedTurno = null;
-                entryTime = null; // Se establecerá cuando el usuario ingrese la hora
-                selectedCategory = null;
-                extraHoursMade = 0;
-                inputHoraIngreso.value = ''; // Limpiar cualquier valor previo
-                inputExtraHours.value = '1'; // Valor por defecto
-                resultDisplay.textContent = `Agregando registro para el día ${displayDate.toLocaleDateString('es-AR')}. Por favor, selecciona el turno.`;
-                deleteRecordBtn.style.display = 'none'; // Ocultar botón de eliminar si no hay registro
-            }
-
-            // Siempre mostrar el primer paso de selección de turno para iniciar la entrada/edición
-            stepSelectTurno.style.display = 'block';
-        }
-
-        function cancelEditing() {
-            isEditingMode = false;
-            editingDateKey = null;
-            resetInterface();
-            resultDisplay.textContent = 'Edición cancelada.';
-            deleteRecordBtn.style.display = 'none'; // Asegurarse de ocultar el botón al cancelar
-        }
-
-        // Nueva función para eliminar un registro
-        function deleteRecord() {
-            if (!editingDateKey) {
-                resultDisplay.textContent = 'Error: No hay un día seleccionado para eliminar.';
-                return;
-            }
-
-            // Confirmar con el usuario antes de eliminar
-            if (confirm(`¿Estás seguro de que quieres eliminar el registro del día ${new Date(editingDateKey).toLocaleDateString('es-AR')}? Esta acción no se puede deshacer.`)) {
-                delete workRecords[editingDateKey]; // Eliminar el registro del objeto
-                localStorage.setItem('workRecords', JSON.stringify(workRecords)); // Actualizar el almacenamiento local
-
-                resultDisplay.textContent = `Registro del día ${new Date(editingDateKey).toLocaleDateString('es-AR')} eliminado correctamente.`;
-                
-                resetInterface(); // Restablecer el formulario y ocultar el mensaje de edición
-                generateCalendar(); // Actualizar la visualización del calendario
-                calculateQuincenaTotal(); // Recalcular el salario de la quincena
-            } else {
-                resultDisplay.textContent = 'Eliminación cancelada.';
-            }
-        }
-
-        function resetInterface() {
-            selectedTurno = null;
-            entryTime = null;
-            selectedCategory = null;
-            extraHoursMade = 0;
-            isEditingMode = false;
-            editingDateKey = null;
-
-            hideAllSteps();
-            stepSelectTurno.style.display = 'block';
-            inputHoraIngreso.value = '';
-            inputExtraHours.value = '1';
-            resultDisplay.textContent = '';
-            deleteRecordBtn.style.display = 'none'; // Asegurarse de que el botón esté oculto al reiniciar la interfaz
-        }
-
-        resetInterface();
-        generateCalendar();
-        calculateQuincenaTotal();
-    </script>
+    <!-- Tabla -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 25%;">Sector</th>
+            <th style="width: 15%; text-align: center;">ID Parada</th>
+            <th style="width: 60%;">Motivo</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Carga dinámica vía JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // JS: Base de Datos completa (Códigos 4000 al 4500)
+    const paradasData = [
+      { sector: "0 - General", id: 4000, motivo: "Cambio de medida AD4" },
+      { sector: "0 - General", id: 4001, motivo: "Cambio de producto AD4" },
+      { sector: "0 - General", id: 4002, motivo: "" },
+      { sector: "0 - General", id: 4003, motivo: "Arranque de máquina" },
+      { sector: "0 - General", id: 4004, motivo: "Cierre de planta" },
+      { sector: "0 - General", id: 4005, motivo: "Corte de luz" },
+      { sector: "0 - General", id: 4006, motivo: "Falla del compresor" },
+      { sector: "0 - General", id: 4007, motivo: "" },
+      { sector: "0 - General", id: 4008, motivo: "" },
+      { sector: "0 - General", id: 4009, motivo: "" },
+      { sector: "0 - General", id: 4010, motivo: "Se espera repuesto de PL3" },
+      { sector: "0 - General", id: 4011, motivo: "Falla eléctrica" },
+      { sector: "0 - General", id: 4012, motivo: "Falla variador principal" },
+      { sector: "0 - General", id: 4013, motivo: "Se para máquina sola" },
+      { sector: "0 - General", id: 4014, motivo: "Accionamiento de parada de emergencia" },
+      { sector: "0 - General", id: 4015, motivo: "Falla servo motor N°8" },
+      { sector: "0 - General", id: 4016, motivo: "Falla PLC" },
+      { sector: "0 - General", id: 4017, motivo: "Cambio de PLC" },
+      { sector: "0 - General", id: 4018, motivo: "" },
+      { sector: "0 - General", id: 4019, motivo: "" },
+      { sector: "0 - General", id: 4020, motivo: "Falta de personal" },
+      { sector: "0 - General", id: 4021, motivo: "Descanso del personal" },
+      { sector: "0 - General", id: 4022, motivo: "Reproceso de paquetes acumulados" },
+      { sector: "0 - General", id: 4023, motivo: "Se toma turno con máquina parada" },
+      { sector: "0 - General", id: 4024, motivo: "Falta materia prima" },
+      { sector: "0 - General", id: 4025, motivo: "" },
+      { sector: "0 - General", id: 4026, motivo: "" },
+      { sector: "0 - General", id: 4027, motivo: "" },
+      { sector: "0 - General", id: 4028, motivo: "" },
+      { sector: "0 - General", id: 4029, motivo: "" },
+      { sector: "0 - General", id: 4030, motivo: "Falla aspirador principal" },
+      { sector: "0 - General", id: 4031, motivo: "Se apaga Osprey" },
+      { sector: "0 - General", id: 4032, motivo: "Tensado de cadena del Rommel" },
+      { sector: "0 - General", id: 4033, motivo: "Se corta cadena de Rommel" },
+      { sector: "0 - General", id: 4034, motivo: "Falla filtro rotativo" },
+      { sector: "0 - General", id: 4035, motivo: "Cambio de tela de filtro rotativo" },
+      { sector: "0 - General", id: 4036, motivo: "Cambio de mangueras de aspiración" },
+      { sector: "0 - General", id: 4037, motivo: "" },
+      { sector: "0 - General", id: 4038, motivo: "" },
+      { sector: "0 - General", id: 4039, motivo: "" },
+      { sector: "0 - General", id: 4040, motivo: "" },
+      { sector: "0 - General", id: 4041, motivo: "" },
+      { sector: "0 - General", id: 4042, motivo: "" },
+      { sector: "0 - General", id: 4043, motivo: "" },
+      { sector: "0 - General", id: 4044, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4045, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4046, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4047, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4048, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4049, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4050, motivo: "Limpieza de sector tamburo" },
+      { sector: "1 - Tamburo / Gel", id: 4051, motivo: "Se traba celulosa en entrador de molino" },
+      { sector: "1 - Tamburo / Gel", id: 4052, motivo: "Corrección de tamburo" },
+      { sector: "1 - Tamburo / Gel", id: 4053, motivo: "Rotura de sensor de elevador de celulosa" },
+      { sector: "1 - Tamburo / Gel", id: 4054, motivo: "No funciona elevador de celulosa" },
+      { sector: "1 - Tamburo / Gel", id: 4055, motivo: "Se corta cadena de elevador de celulosa" },
+      { sector: "1 - Tamburo / Gel", id: 4056, motivo: "Se traba entrador de celulosa" },
+      { sector: "1 - Tamburo / Gel", id: 4057, motivo: "Cambio de rodamientos de rodillo entrador de celulosa" },
+      { sector: "1 - Tamburo / Gel", id: 4058, motivo: "Se traba manta" },
+      { sector: "1 - Tamburo / Gel", id: 4059, motivo: "Se dobla manta" },
+      { sector: "1 - Tamburo / Gel", id: 4060, motivo: "Malformación de manta" },
+      { sector: "1 - Tamburo / Gel", id: 4061, motivo: "Gel fuera de la manta" },
+      { sector: "1 - Tamburo / Gel", id: 4062, motivo: "Cambio de correa 912 de tamburo" },
+      { sector: "1 - Tamburo / Gel", id: 4063, motivo: "Cambio de correa del molino" },
+      { sector: "1 - Tamburo / Gel", id: 4064, motivo: "Cambio de fieltro de molino de contracuchilla" },
+      { sector: "1 - Tamburo / Gel", id: 4065, motivo: "Se suelta clapeta del molino" },
+      { sector: "1 - Tamburo / Gel", id: 4066, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4067, motivo: "Revisión de contracuchilla del molino de manta grande / chica" },
+      { sector: "1 - Tamburo / Gel", id: 4068, motivo: "Regulación de contracuchilla del molino de manta grande / chica" },
+      { sector: "1 - Tamburo / Gel", id: 4069, motivo: "Cambio de contracuchilla del molino de manta grande / chica" },
+      { sector: "1 - Tamburo / Gel", id: 4070, motivo: "Reemplazo de rotor de molino de manta grande / chica" },
+      { sector: "1 - Tamburo / Gel", id: 4071, motivo: "Reemplazo de rodamientos del rotor del molino de manta grande / chica" },
+      { sector: "1 - Tamburo / Gel", id: 4072, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4073, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4074, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4075, motivo: "Cambio de telera N°1 - robador manta grande" },
+      { sector: "1 - Tamburo / Gel", id: 4076, motivo: "Cambio de banda N°2 - tamburos" },
+      { sector: "1 - Tamburo / Gel", id: 4077, motivo: "Cambio de telera N°3 - robador manta chica" },
+      { sector: "1 - Tamburo / Gel", id: 4078, motivo: "Cambio de banda N°4 - anterior al grabador" },
+      { sector: "1 - Tamburo / Gel", id: 4079, motivo: "Cambio de banda N°5 - superior posterior al grabador" },
+      { sector: "1 - Tamburo / Gel", id: 4080, motivo: "Cambio de banda N°6 - inferior posterior al grabador" },
+      { sector: "1 - Tamburo / Gel", id: 4081, motivo: "Cambio de telera N°7 - transferencia" },
+      { sector: "1 - Tamburo / Gel", id: 4082, motivo: "Cambio de eje de mesa" },
+      { sector: "1 - Tamburo / Gel", id: 4083, motivo: "Cambio de rodamiento" },
+      { sector: "1 - Tamburo / Gel", id: 4084, motivo: "Rotura de caja de transmisión de cardán" },
+      { sector: "1 - Tamburo / Gel", id: 4085, motivo: "Cambio de correa" },
+      { sector: "1 - Tamburo / Gel", id: 4086, motivo: "Ajuste de correa" },
+      { sector: "1 - Tamburo / Gel", id: 4087, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4088, motivo: "Se traba manta en rodillo grabador, ajuste de correa" },
+      { sector: "1 - Tamburo / Gel", id: 4089, motivo: "Se traba manta en rodillo grabador, cambio de correa" },
+      { sector: "1 - Tamburo / Gel", id: 4090, motivo: "Falla equipo de gel" },
+      { sector: "1 - Tamburo / Gel", id: 4091, motivo: "Se tapa filtro de equipo de gel" },
+      { sector: "1 - Tamburo / Gel", id: 4092, motivo: "Cambio de filtro de quipo de gel" },
+      { sector: "1 - Tamburo / Gel", id: 4093, motivo: "Limpieza de conducto de gel" },
+      { sector: "1 - Tamburo / Gel", id: 4094, motivo: "Se queda sin gel la tolva" },
+      { sector: "1 - Tamburo / Gel", id: 4095, motivo: "Se sale correa del equipo de gel" },
+      { sector: "1 - Tamburo / Gel", id: 4096, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4097, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4098, motivo: "" },
+      { sector: "1 - Tamburo / Gel", id: 4099, motivo: "" },
+      { sector: "2 - polietileno", id: 4100, motivo: "Se corta Polietileno" },
+      { sector: "2 - polietileno", id: 4101, motivo: "Se corta Polietileno en rodillo enfriador" },
+      { sector: "2 - polietileno", id: 4102, motivo: "Se dobla polietileno en empalme" },
+      { sector: "2 - polietileno", id: 4103, motivo: "Falla arrimador de poli" },
+      { sector: "2 - polietileno", id: 4104, motivo: "" },
+      { sector: "2 - polietileno", id: 4105, motivo: "" },
+      { sector: "2 - polietileno", id: 4106, motivo: "" },
+      { sector: "2 - polietileno", id: 4107, motivo: "" },
+      { sector: "2 - polietileno", id: 4108, motivo: "" },
+      { sector: "2 - polietileno", id: 4109, motivo: "" },
+      { sector: "2 - polietileno", id: 4110, motivo: "Cambio de banda N°8 - pegado de pañal" },
+      { sector: "2 - polietileno", id: 4111, motivo: "Regulación mesa N°8" },
+      { sector: "2 - polietileno", id: 4112, motivo: "Cambio de banda N°13 - pegado de pañal" },
+      { sector: "2 - polietileno", id: 4113, motivo: "Rotura de caja de transmisión de cardán" },
+      { sector: "2 - polietileno", id: 4114, motivo: "" },
+      { sector: "2 - polietileno", id: 4115, motivo: "Pinchadura en debobinador de poli derecho" },
+      { sector: "2 - polietileno", id: 4116, motivo: "Pinchadura en debobinador de poli izquierdo" },
+      { sector: "2 - polietileno", id: 4117, motivo: "Cambio de correa de debobinador" },
+      { sector: "2 - polietileno", id: 4118, motivo: "Cambio de manguera de aire de empalmador de poli" },
+      { sector: "2 - polietileno", id: 4119, motivo: "" },
+      { sector: "2 - polietileno", id: 4120, motivo: "Cambio de correa de rodillo enfriador" },
+      { sector: "2 - polietileno", id: 4121, motivo: "" },
+      { sector: "2 - polietileno", id: 4122, motivo: "" },
+      { sector: "2 - polietileno", id: 4123, motivo: "" },
+      { sector: "2 - polietileno", id: 4124, motivo: "" },
+      { sector: "2 - polietileno", id: 4125, motivo: "" },
+      { sector: "2 - polietileno", id: 4126, motivo: "" },
+      { sector: "2 - polietileno", id: 4127, motivo: "" },
+      { sector: "2 - polietileno", id: 4128, motivo: "" },
+      { sector: "2 - polietileno", id: 4129, motivo: "" },
+      { sector: "2 - polietileno", id: 4130, motivo: "Problema en aplicador de polietileno" },
+      { sector: "2 - polietileno", id: 4131, motivo: "Purga de aplicador de polietileno" },
+      { sector: "2 - polietileno", id: 4132, motivo: "Limpieza de aplicador de polietileno" },
+      { sector: "2 - polietileno", id: 4133, motivo: "Limpieza de pistola de aplicador de polietileno" },
+      { sector: "2 - polietileno", id: 4134, motivo: "No levanta temperatura el colero del polietileno" },
+      { sector: "2 - polietileno", id: 4135, motivo: "Falla colero de polietileno" },
+      { sector: "2 - polietileno", id: 4136, motivo: "Pérdida de adhesivo en bomba de colero de polietileno" },
+      { sector: "2 - polietileno", id: 4137, motivo: "Pérdida de adhesivo en manguera de aplicador de polietileno" },
+      { sector: "2 - polietileno", id: 4138, motivo: "Pérdida en aplicador de adhesivo de polietileno" },
+      { sector: "2 - polietileno", id: 4139, motivo: "" },
+      { sector: "2 - polietileno", id: 4140, motivo: "" },
+      { sector: "2 - polietileno", id: 4141, motivo: "" },
+      { sector: "2 - polietileno", id: 4142, motivo: "" },
+      { sector: "2 - polietileno", id: 4143, motivo: "" },
+      { sector: "2 - polietileno", id: 4144, motivo: "" },
+      { sector: "2 - polietileno", id: 4145, motivo: "" },
+      { sector: "2 - polietileno", id: 4146, motivo: "" },
+      { sector: "2 - polietileno", id: 4147, motivo: "" },
+      { sector: "2 - polietileno", id: 4148, motivo: "" },
+      { sector: "2 - polietileno", id: 4149, motivo: "" },
+      { sector: "3 - TNT", id: 4150, motivo: "Se corta TNT blanca" },
+      { sector: "3 - TNT", id: 4151, motivo: "Se corta empalme de TNT blanca" },
+      { sector: "3 - TNT", id: 4152, motivo: "" },
+      { sector: "3 - TNT", id: 4153, motivo: "" },
+      { sector: "3 - TNT", id: 4154, motivo: "" },
+      { sector: "3 - TNT", id: 4155, motivo: "Cambio de rodillo pisador de TNT blanca L/O" },
+      { sector: "3 - TNT", id: 4156, motivo: "Cambio de rodillo pisador de TNT blanca L/T" },
+      { sector: "3 - TNT", id: 4157, motivo: "" },
+      { sector: "3 - TNT", id: 4158, motivo: "" },
+      { sector: "3 - TNT", id: 4159, motivo: "" },
+      { sector: "3 - TNT", id: 4160, motivo: "Falla de colero de TNT blanca" },
+      { sector: "3 - TNT", id: 4161, motivo: "Falla bomba de colero de TNT blanca" },
+      { sector: "3 - TNT", id: 4162, motivo: "Purga de aplicador de adhesivo de TNT blanca" },
+      { sector: "3 - TNT", id: 4163, motivo: "Se corta aplicación de TNT blanca" },
+      { sector: "3 - TNT", id: 4164, motivo: "Cambio de filtros de colero de TNT blanca" },
+      { sector: "3 - TNT", id: 4165, motivo: "Pérdida de adhesivo en bomba de colero de TNT blanca" },
+      { sector: "3 - TNT", id: 4166, motivo: "Pérdida de adhesivo en manguera de aplicador de TNT blanca" },
+      { sector: "3 - TNT", id: 4167, motivo: "Pérdida en aplicador de adhesivo de TNT blanca" },
+      { sector: "3 - TNT", id: 4168, motivo: "Limpieza de pistolas de TNT blanca" },
+      { sector: "3 - TNT", id: 4169, motivo: "Limpieza de platina de TNT blanca" },
+      { sector: "3 - TNT", id: 4170, motivo: "Limpieza de rodillos pasantes de TNT blanca" },
+      { sector: "3 - TNT", id: 4171, motivo: "Se corta TNT verde" },
+      { sector: "3 - TNT", id: 4172, motivo: "Cambio de cuchilla de TNT verde" },
+      { sector: "3 - TNT", id: 4173, motivo: "Se va de punto cuchilla de TNT verde" },
+      { sector: "3 - TNT", id: 4174, motivo: "Se da vuelta cuchilla de TNT verde" },
+      { sector: "3 - TNT", id: 4175, motivo: "Limpieza de agujeros de aspiración de cilindro de TNT verde" },
+      { sector: "3 - TNT", id: 4176, motivo: "Limpieza de mangueras de aspiración de modulo TNT verde" },
+      { sector: "3 - TNT", id: 4177, motivo: "" },
+      { sector: "3 - TNT", id: 4178, motivo: "" },
+      { sector: "3 - TNT", id: 4179, motivo: "" },
+      { sector: "3 - TNT", id: 4180, motivo: "Cambio de banda N°11 - TNT verde" },
+      { sector: "3 - TNT", id: 4181, motivo: "Cambio de banda N*12 - aplicación adhesivo TNT Blanca" },
+      { sector: "3 - TNT", id: 4182, motivo: "Ajuste de correa de TNT verde" },
+      { sector: "3 - TNT", id: 4183, motivo: "Cambio de correa de TNT verde" },
+      { sector: "3 - TNT", id: 4184, motivo: "Problema con aplicador de TNT verde" },
+      { sector: "3 - TNT", id: 4185, motivo: "Limpieza de rosetas de módulo de TNT verde" },
+      { sector: "3 - TNT", id: 4186, motivo: "Limpieza de pistolas de TNT verde" },
+      { sector: "3 - TNT", id: 4187, motivo: "Cambio de pistolas de TNT verde" },
+      { sector: "3 - TNT", id: 4188, motivo: "Cambio de rodamiento" },
+      { sector: "3 - TNT", id: 4189, motivo: "" },
+      { sector: "3 - TNT", id: 4190, motivo: "Cardán del módulo de TNT verde con juego" },
+      { sector: "3 - TNT", id: 4191, motivo: "" },
+      { sector: "3 - TNT", id: 4192, motivo: "" },
+      { sector: "3 - TNT", id: 4193, motivo: "" },
+      { sector: "3 - TNT", id: 4194, motivo: "" },
+      { sector: "3 - TNT", id: 4195, motivo: "" },
+      { sector: "3 - TNT", id: 4196, motivo: "" },
+      { sector: "3 - TNT", id: 4197, motivo: "" },
+      { sector: "3 - TNT", id: 4198, motivo: "" },
+      { sector: "3 - TNT", id: 4199, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4200, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4201, motivo: "Se traba pañal" },
+      { sector: "4 - Etiquetas", id: 4202, motivo: "Etiqueta pegada en pisador" },
+      { sector: "4 - Etiquetas", id: 4203, motivo: "Cambio lubricador de etiqueta" },
+      { sector: "4 - Etiquetas", id: 4204, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4205, motivo: "Problema con etiquetero N*1 L/O" },
+      { sector: "4 - Etiquetas", id: 4206, motivo: "Problema con etiquetero N*1 L/T" },
+      { sector: "4 - Etiquetas", id: 4207, motivo: "Problema con etiquetero N*2 L/O" },
+      { sector: "4 - Etiquetas", id: 4208, motivo: "Problema con etiquetero N*2 L/T" },
+      { sector: "4 - Etiquetas", id: 4209, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4210, motivo: "Cambio de cuchilla de etiquetero N*1 L/O" },
+      { sector: "4 - Etiquetas", id: 4211, motivo: "Cambio de cuchilla de etiquetero N*1 L/T" },
+      { sector: "4 - Etiquetas", id: 4212, motivo: "Cambio de cuchilla de etiquetero N*2 L/O" },
+      { sector: "4 - Etiquetas", id: 4213, motivo: "Cambio de cuchilla de etiquetero N*2 L/T" },
+      { sector: "4 - Etiquetas", id: 4214, motivo: "Se da vuelta cuchilla de etiquetero N*1 L/O" },
+      { sector: "4 - Etiquetas", id: 4215, motivo: "Se da vuelta cuchilla de etiquetero N*1 L/T" },
+      { sector: "4 - Etiquetas", id: 4216, motivo: "Se da vuelta cuchilla de etiquetero N*2 L/O" },
+      { sector: "4 - Etiquetas", id: 4217, motivo: "Se da vuelta cuchilla de etiquetero N*2 L/T" },
+      { sector: "4 - Etiquetas", id: 4218, motivo: "Cambio de tela de esmeril de rodillo traccionador de etiquetero N*1 L/O" },
+      { sector: "4 - Etiquetas", id: 4219, motivo: "Cambio de tela de esmeril de rodillo traccionador de etiquetero N*1 L/T" },
+      { sector: "4 - Etiquetas", id: 4220, motivo: "Cambio de tela de esmeril de rodillo traccionador de etiquetero N*2 L/O" },
+      { sector: "4 - Etiquetas", id: 4221, motivo: "Cambio de tela de esmeril de rodillo traccionador de etiquetero N*2 L/T" },
+      { sector: "4 - Etiquetas", id: 4222, motivo: "Rotura de caja de transmisión de cardán" },
+      { sector: "4 - Etiquetas", id: 4223, motivo: "Se sale polea de etiquetero N*1" },
+      { sector: "4 - Etiquetas", id: 4224, motivo: "Se sale polea de etiquetero N*2" },
+      { sector: "4 - Etiquetas", id: 4225, motivo: "Se sale correa de etiquetero N*1" },
+      { sector: "4 - Etiquetas", id: 4226, motivo: "Se sale correa de etiquetero N*2" },
+      { sector: "4 - Etiquetas", id: 4227, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4228, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4229, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4230, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4231, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4232, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4233, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4234, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4235, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4236, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4237, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4238, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4239, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4240, motivo: "Problema de aspiración" },
+      { sector: "4 - Etiquetas", id: 4241, motivo: "Lumbrera floja de etiquetero N*1" },
+      { sector: "4 - Etiquetas", id: 4242, motivo: "Lumbrera floja de etiquetero N*2" },
+      { sector: "4 - Etiquetas", id: 4243, motivo: "Falla sensor de etiquetas L/O" },
+      { sector: "4 - Etiquetas", id: 4244, motivo: "Falla sensor de etiquetas L/T" },
+      { sector: "4 - Etiquetas", id: 4245, motivo: "Falla descartador" },
+      { sector: "4 - Etiquetas", id: 4246, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4247, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4248, motivo: "" },
+      { sector: "4 - Etiquetas", id: 4249, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4250, motivo: "Pañal pinchado" },
+      { sector: "5 - plegado / corte", id: 4251, motivo: "Regulación de plegado" },
+      { sector: "5 - plegado / corte", id: 4252, motivo: "Cambio de lubricadores de corte por rodadura" },
+      { sector: "5 - plegado / corte", id: 4253, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4254, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4255, motivo: "Se traba línea en rodillo traccionador" },
+      { sector: "5 - plegado / corte", id: 4256, motivo: "Cambio de correa de rodillo traccionador" },
+      { sector: "5 - plegado / corte", id: 4257, motivo: "Cambio de rodillo traccionador" },
+      { sector: "5 - plegado / corte", id: 4258, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4259, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4260, motivo: "Cambio de banda N*15 - anterior a primera tracción" },
+      { sector: "5 - plegado / corte", id: 4261, motivo: "Cambio de banda N*15 - posterior al corte por rodadura" },
+      { sector: "5 - plegado / corte", id: 4262, motivo: "Cambio de banda N*17 - mesa de plegado" },
+      { sector: "5 - plegado / corte", id: 4263, motivo: "Cambio de banda N*16 - plegado aletas" },
+      { sector: "5 - plegado / corte", id: 4264, motivo: "Cambio de banda N*18 - anterior inferior al corte final" },
+      { sector: "5 - plegado / corte", id: 4265, motivo: "Cambio de banda N*19 - anterior superior al corte final" },
+      { sector: "5 - plegado / corte", id: 4266, motivo: "Cambio de banda N*20 - posterior superior al corte final" },
+      { sector: "5 - plegado / corte", id: 4267, motivo: "Cambio de banda N*21 - posterior inferior al corte final" },
+      { sector: "5 - plegado / corte", id: 4268, motivo: "Cambio de rodamiento de mesa N*21" },
+      { sector: "5 - plegado / corte", id: 4269, motivo: "Cambio de eje de mesa N*21" },
+      { sector: "5 - plegado / corte", id: 4270, motivo: "Alineación de banda N*21" },
+      { sector: "5 - plegado / corte", id: 4271, motivo: "Cambio de correa de mesa N°21" },
+      { sector: "5 - plegado / corte", id: 4272, motivo: "Rotura de tensor" },
+      { sector: "5 - plegado / corte", id: 4273, motivo: "Rotura de caja de transmisión de cardán" },
+      { sector: "5 - plegado / corte", id: 4274, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4275, motivo: "Cambio de correa de corte anatómico" },
+      { sector: "5 - plegado / corte", id: 4276, motivo: "Regulación de corte anatómico" },
+      { sector: "5 - plegado / corte", id: 4277, motivo: "Cambio de corte anatómico" },
+      { sector: "5 - plegado / corte", id: 4278, motivo: "Variación de corte final" },
+      { sector: "5 - plegado / corte", id: 4279, motivo: "Regulación / afilado de cuchilla de corte final" },
+      { sector: "5 - plegado / corte", id: 4280, motivo: "Cambio de cuchilla de corte final" },
+      { sector: "5 - plegado / corte", id: 4281, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4282, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4283, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4284, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4285, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4286, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4287, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4288, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4289, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4290, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4291, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4292, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4293, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4294, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4295, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4296, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4297, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4298, motivo: "" },
+      { sector: "5 - plegado / corte", id: 4299, motivo: "" },
+      { sector: "6 - Trifolding", id: 4300, motivo: "Se traba pañal" },
+      { sector: "6 - Trifolding", id: 4301, motivo: "Puesta a punto de 1er módulo de espadines" },
+      { sector: "6 - Trifolding", id: 4302, motivo: "Puesta a punto de 2do módulo de espadines" },
+      { sector: "6 - Trifolding", id: 4303, motivo: "" },
+      { sector: "6 - Trifolding", id: 4304, motivo: "" },
+      { sector: "6 - Trifolding", id: 4305, motivo: "" },
+      { sector: "6 - Trifolding", id: 4306, motivo: "" },
+      { sector: "6 - Trifolding", id: 4307, motivo: "" },
+      { sector: "6 - Trifolding", id: 4308, motivo: "" },
+      { sector: "6 - Trifolding", id: 4309, motivo: "" },
+      { sector: "6 - Trifolding", id: 4310, motivo: "Se tensa correa mando trifolding" },
+      { sector: "6 - Trifolding", id: 4311, motivo: "Cambio de banda N°22" },
+      { sector: "6 - Trifolding", id: 4312, motivo: "Cambio de banda N°23" },
+      { sector: "6 - Trifolding", id: 4313, motivo: "Se corta correa de mesa N°23" },
+      { sector: "6 - Trifolding", id: 4314, motivo: "Cambio de banda N°24" },
+      { sector: "6 - Trifolding", id: 4315, motivo: "Cambio de banda N°25" },
+      { sector: "6 - Trifolding", id: 4316, motivo: "Cambio de banda N°26" },
+      { sector: "6 - Trifolding", id: 4317, motivo: "Cambio de banda N°27" },
+      { sector: "6 - Trifolding", id: 4318, motivo: "Cambio de banda N°28" },
+      { sector: "6 - Trifolding", id: 4319, motivo: "Cambio de banda N°29" },
+      { sector: "6 - Trifolding", id: 4320, motivo: "Cambio de banda N°30" },
+      { sector: "6 - Trifolding", id: 4321, motivo: "Cambio de banda N°31" },
+      { sector: "6 - Trifolding", id: 4322, motivo: "Cambio de banda N°32" },
+      { sector: "6 - Trifolding", id: 4323, motivo: "Problema con motor de mesa N°32" },
+      { sector: "6 - Trifolding", id: 4324, motivo: "Cambio de banda N°33" },
+      { sector: "6 - Trifolding", id: 4325, motivo: "Cambio de rodamientos mesa N°33" },
+      { sector: "6 - Trifolding", id: 4326, motivo: "Rotura de caja de transmisión de cardán" },
+      { sector: "6 - Trifolding", id: 4327, motivo: "Ajuste de correa de espadines" },
+      { sector: "6 - Trifolding", id: 4328, motivo: "" },
+      { sector: "6 - Trifolding", id: 4329, motivo: "" },
+      { sector: "6 - Trifolding", id: 4330, motivo: "Problema con corte anatómico" },
+      { sector: "6 - Trifolding", id: 4331, motivo: "Limpieza de corte anatómico" },
+      { sector: "6 - Trifolding", id: 4332, motivo: "Regulación de corte anatómico" },
+      { sector: "6 - Trifolding", id: 4333, motivo: "Cambio de correa 1600 de corte anatómico" },
+      { sector: "6 - Trifolding", id: 4334, motivo: "" },
+      { sector: "6 - Trifolding", id: 4335, motivo: "Se sale correa del trifolding" },
+      { sector: "6 - Trifolding", id: 4336, motivo: "Tensado de correas del trifolding" },
+      { sector: "6 - Trifolding", id: 4337, motivo: "Se corta correa de mando trifolding" },
+      { sector: "6 - Trifolding", id: 4338, motivo: "" },
+      { sector: "6 - Trifolding", id: 4339, motivo: "" },
+      { sector: "6 - Trifolding", id: 4340, motivo: "" },
+      { sector: "6 - Trifolding", id: 4341, motivo: "" },
+      { sector: "6 - Trifolding", id: 4342, motivo: "" },
+      { sector: "6 - Trifolding", id: 4343, motivo: "" },
+      { sector: "6 - Trifolding", id: 4344, motivo: "" },
+      { sector: "6 - Trifolding", id: 4345, motivo: "" },
+      { sector: "6 - Trifolding", id: 4346, motivo: "" },
+      { sector: "6 - Trifolding", id: 4347, motivo: "" },
+      { sector: "6 - Trifolding", id: 4348, motivo: "" },
+      { sector: "6 - Trifolding", id: 4349, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4350, motivo: "Puesta a punto de stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4351, motivo: "Se traba pañal en entrada de stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4352, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4353, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4354, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4355, motivo: "Problema con stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4356, motivo: "Se apaga stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4357, motivo: "Falla sensor de stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4358, motivo: "Sigue de largo stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4359, motivo: "Stacker cuenta mal" },
+      { sector: "7 - Stacker / Selladora", id: 4360, motivo: "No completa el ciclo el stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4361, motivo: "Falla pistón de stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4362, motivo: "Falla servomotor de stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4363, motivo: "Se sale empujador" },
+      { sector: "7 - Stacker / Selladora", id: 4364, motivo: "Problema de compactación en stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4365, motivo: "Se sale cadena de guía de stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4366, motivo: "Cambio de bulón de boquilla de stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4367, motivo: "Rotura de conector de manguera de aire del stacker" },
+      { sector: "7 - Stacker / Selladora", id: 4368, motivo: "Cambio de regulador de aire de cilindro empujador" },
+      { sector: "7 - Stacker / Selladora", id: 4369, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4370, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4371, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4372, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4373, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4374, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4375, motivo: "Se apaga selladora" },
+      { sector: "7 - Stacker / Selladora", id: 4376, motivo: "Problema con selladora" },
+      { sector: "7 - Stacker / Selladora", id: 4377, motivo: "Puesta a punto de selladora" },
+      { sector: "7 - Stacker / Selladora", id: 4378, motivo: "Cambio de teflón de selladora" },
+      { sector: "7 - Stacker / Selladora", id: 4379, motivo: "Cambio de rodamiento" },
+      { sector: "7 - Stacker / Selladora", id: 4380, motivo: "Cambio de rodamiento 690" },
+      { sector: "7 - Stacker / Selladora", id: 4381, motivo: "Se quema resistencia de selladora" },
+      { sector: "7 - Stacker / Selladora", id: 4382, motivo: "Cambio de mordaza de selladora" },
+      { sector: "7 - Stacker / Selladora", id: 4383, motivo: "Problema con sensores de selladora" },
+      { sector: "7 - Stacker / Selladora", id: 4384, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4385, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4386, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4387, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4388, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4389, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4390, motivo: "Falla inkjet" },
+      { sector: "7 - Stacker / Selladora", id: 4391, motivo: "Problema de impresión" },
+      { sector: "7 - Stacker / Selladora", id: 4392, motivo: "Cambio de cartucho de inkjet" },
+      { sector: "7 - Stacker / Selladora", id: 4393, motivo: "No cambia de fecha la inkjet" },
+      { sector: "7 - Stacker / Selladora", id: 4394, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4395, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4396, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4397, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4398, motivo: "" },
+      { sector: "7 - Stacker / Selladora", id: 4399, motivo: "" },
+      { sector: "8 - Elastano", id: 4400, motivo: "Se cortan elastanos" },
+      { sector: "8 - Elastano", id: 4401, motivo: "" },
+      { sector: "8 - Elastano", id: 4402, motivo: "" },
+      { sector: "8 - Elastano", id: 4403, motivo: "" },
+      { sector: "8 - Elastano", id: 4404, motivo: "" },
+      { sector: "8 - Elastano", id: 4405, motivo: "Cambio de correa de módulo de elastanos" },
+      { sector: "8 - Elastano", id: 4406, motivo: "" },
+      { sector: "8 - Elastano", id: 4407, motivo: "" },
+      { sector: "8 - Elastano", id: 4408, motivo: "" },
+      { sector: "8 - Elastano", id: 4409, motivo: "" },
+      { sector: "8 - Elastano", id: 4410, motivo: "Rotura de rodillo pisador de elastanos" },
+      { sector: "8 - Elastano", id: 4411, motivo: "Cambio de rodamiento" },
+      { sector: "8 - Elastano", id: 4412, motivo: "Se sale rodillo pasador de elastano" },
+      { sector: "8 - Elastano", id: 4413, motivo: "" },
+      { sector: "8 - Elastano", id: 4414, motivo: "" },
+      { sector: "8 - Elastano", id: 4415, motivo: "" },
+      { sector: "8 - Elastano", id: 4416, motivo: "" },
+      { sector: "8 - Elastano", id: 4417, motivo: "" },
+      { sector: "8 - Elastano", id: 4418, motivo: "" },
+      { sector: "8 - Elastano", id: 4419, motivo: "" },
+      { sector: "8 - Elastano", id: 4420, motivo: "" },
+      { sector: "8 - Elastano", id: 4421, motivo: "" },
+      { sector: "8 - Elastano", id: 4422, motivo: "" },
+      { sector: "8 - Elastano", id: 4423, motivo: "" },
+      { sector: "8 - Elastano", id: 4424, motivo: "" },
+      { sector: "8 - Elastano", id: 4425, motivo: "Aplicación de adhesivo" },
+      { sector: "8 - Elastano", id: 4426, motivo: "Revisión de pistola de aplicador de elastano L/O" },
+      { sector: "8 - Elastano", id: 4427, motivo: "Revisión de pistola de aplicador de elastano L/T" },
+      { sector: "8 - Elastano", id: 4428, motivo: "Limpieza de rosetas de aplicador L/O" },
+      { sector: "8 - Elastano", id: 4429, motivo: "Limpieza de rosetas de aplicador L/T" },
+      { sector: "8 - Elastano", id: 4430, motivo: "Cambio de roseta de aplicador L/O" },
+      { sector: "8 - Elastano", id: 4431, motivo: "Cambio de roseta de aplicador L/T" },
+      { sector: "8 - Elastano", id: 4432, motivo: "Cambio de electroválvula de pistola de elastano L/O" },
+      { sector: "8 - Elastano", id: 4433, motivo: "Cambio de electroválvula de pistola de elastano L/T" },
+      { sector: "8 - Elastano", id: 4434, motivo: "Pérdida de adhesivo en bomba de colero de elastano" },
+      { sector: "8 - Elastano", id: 4435, motivo: "Pérdida de adhesivo en manguera de aplicador de elastano" },
+      { sector: "8 - Elastano", id: 4436, motivo: "Pérdida en aplicador de adhesivo de elastano" },
+      { sector: "8 - Elastano", id: 4437, motivo: "" },
+      { sector: "8 - Elastano", id: 4438, motivo: "" },
+      { sector: "8 - Elastano", id: 4439, motivo: "" },
+      { sector: "8 - Elastano", id: 4440, motivo: "" },
+      { sector: "8 - Elastano", id: 4441, motivo: "" },
+      { sector: "8 - Elastano", id: 4442, motivo: "" },
+      { sector: "8 - Elastano", id: 4443, motivo: "" },
+      { sector: "8 - Elastano", id: 4444, motivo: "" },
+      { sector: "8 - Elastano", id: 4445, motivo: "" },
+      { sector: "8 - Elastano", id: 4446, motivo: "" },
+      { sector: "8 - Elastano", id: 4447, motivo: "" },
+      { sector: "8 - Elastano", id: 4448, motivo: "" },
+      { sector: "8 - Elastano", id: 4449, motivo: "" },
+      { sector: "9 - Barrera", id: 4450, motivo: "Se corta empalme de barrera" },
+      { sector: "9 - Barrera", id: 4451, motivo: "Se corta barrera" },
+      { sector: "9 - Barrera", id: 4452, motivo: "Se cortan elastanos de barrera" },
+      { sector: "9 - Barrera", id: 4453, motivo: "Limpieza de rodillos de barrera" },
+      { sector: "9 - Barrera", id: 4454, motivo: "Se traba barrera en termo sellado" },
+      { sector: "9 - Barrera", id: 4455, motivo: "" },
+      { sector: "9 - Barrera", id: 4456, motivo: "" },
+      { sector: "9 - Barrera", id: 4457, motivo: "" },
+      { sector: "9 - Barrera", id: 4458, motivo: "" },
+      { sector: "9 - Barrera", id: 4459, motivo: "" },
+      { sector: "9 - Barrera", id: 4460, motivo: "Se desplaza rodillo de grilon de termo sellado" },
+      { sector: "9 - Barrera", id: 4461, motivo: "Cambio de rodamientos de rodillo traccionador de barrera" },
+      { sector: "9 - Barrera", id: 4462, motivo: "" },
+      { sector: "9 - Barrera", id: 4463, motivo: "" },
+      { sector: "9 - Barrera", id: 4464, motivo: "" },
+      { sector: "9 - Barrera", id: 4465, motivo: "" },
+      { sector: "9 - Barrera", id: 4466, motivo: "" },
+      { sector: "9 - Barrera", id: 4467, motivo: "" },
+      { sector: "9 - Barrera", id: 4468, motivo: "" },
+      { sector: "9 - Barrera", id: 4469, motivo: "" },
+      { sector: "9 - Barrera", id: 4470, motivo: "" },
+      { sector: "9 - Barrera", id: 4471, motivo: "" },
+      { sector: "9 - Barrera", id: 4472, motivo: "" },
+      { sector: "9 - Barrera", id: 4473, motivo: "" },
+      { sector: "9 - Barrera", id: 4474, motivo: "" },
+      { sector: "9 - Barrera", id: 4475, motivo: "Regulación de bomba de adhesivo de elastano de barrera" },
+      { sector: "9 - Barrera", id: 4476, motivo: "Purga de aplicador de adhesivo de elastano de barrera" },
+      { sector: "9 - Barrera", id: 4477, motivo: "Falla aplicación de barrera L/O" },
+      { sector: "9 - Barrera", id: 4478, motivo: "Falla aplicación de barrera L/T" },
+      { sector: "9 - Barrera", id: 4479, motivo: "Perdida de aplicador de barrera L/O" },
+      { sector: "9 - Barrera", id: 4480, motivo: "Perdida de aplicador de barrera L/T" },
+      { sector: "9 - Barrera", id: 4481, motivo: "Problema con aplicación de intermitente de barrera L/O" },
+      { sector: "9 - Barrera", id: 4482, motivo: "Problema con aplicación de intermitente de barrera L/T" },
+      { sector: "9 - Barrera", id: 4483, motivo: "Problema con cuchilla de corte longitudinal de barrera" },
+      { sector: "9 - Barrera", id: 4484, motivo: "" },
+      { sector: "9 - Barrera", id: 4485, motivo: "" },
+      { sector: "9 - Barrera", id: 4486, motivo: "" },
+      { sector: "9 - Barrera", id: 4487, motivo: "" },
+      { sector: "9 - Barrera", id: 4488, motivo: "" },
+      { sector: "9 - Barrera", id: 4489, motivo: "" },
+      { sector: "9 - Barrera", id: 4490, motivo: "" },
+      { sector: "9 - Barrera", id: 4491, motivo: "" },
+      { sector: "9 - Barrera", id: 4492, motivo: "" },
+      { sector: "9 - Barrera", id: 4493, motivo: "" },
+      { sector: "9 - Barrera", id: 4494, motivo: "" },
+      { sector: "9 - Barrera", id: 4495, motivo: "" },
+      { sector: "9 - Barrera", id: 4496, motivo: "" },
+      { sector: "9 - Barrera", id: 4497, motivo: "" },
+      { sector: "9 - Barrera", id: 4498, motivo: "" },
+      { sector: "9 - Barrera", id: 4499, motivo: "" },
+      { sector: "9 - Barrera", id: 4500, motivo: "" }
+    ];
+
+    // Cargar Sectores Únicos en el <select>
+    const selectSector = document.getElementById('searchSector');
+    const sectoresUnicos = [...new Set(paradasData.map(item => item.sector))];
+    sectoresUnicos.forEach(sec => {
+      const option = document.createElement('option');
+      option.value = sec;
+      option.textContent = sec;
+      selectSector.appendChild(option);
+    });
+
+    // Renderizar Tabla
+    const tableBody = document.getElementById('tableBody');
+    const countDisplay = document.getElementById('countDisplay');
+
+    function renderTable(data) {
+      tableBody.innerHTML = '';
+      countDisplay.textContent = data.length;
+
+      if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="3" class="no-results">No se encontraron resultados para la búsqueda.</td></tr>`;
+        return;
+      }
+
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.sector}</td>
+          <td style="text-align: center;"><span class="badge-id">${item.id}</span></td>
+          <td>${item.motivo || '<i style="color:#aaa;">(En blanco)</i>'}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Filtrar Datos en tiempo real
+    function filterData() {
+      const genVal = document.getElementById('searchGeneral').value.toLowerCase().trim();
+      const secVal = document.getElementById('searchSector').value;
+      const idVal = document.getElementById('searchID').value.trim();
+      const motVal = document.getElementById('searchMotivo').value.toLowerCase().trim();
+
+      const filtered = paradasData.filter(item => {
+        const matchGen = genVal === '' || 
+          item.sector.toLowerCase().includes(genVal) || 
+          item.id.toString().includes(genVal) || 
+          item.motivo.toLowerCase().includes(genVal);
+
+        const matchSec = secVal === '' || item.sector === secVal;
+        const matchID = idVal === '' || item.id.toString().includes(idVal);
+        const matchMot = motVal === '' || item.motivo.toLowerCase().includes(motVal);
+
+        return matchGen && matchSec && matchID && matchMot;
+      });
+
+      renderTable(filtered);
+    }
+
+    // Resetear Filtros
+    function resetFilters() {
+      document.getElementById('searchGeneral').value = '';
+      document.getElementById('searchSector').value = '';
+      document.getElementById('searchID').value = '';
+      document.getElementById('searchMotivo').value = '';
+      renderTable(paradasData);
+    }
+
+    // Event Listeners
+    document.getElementById('searchGeneral').addEventListener('input', filterData);
+    document.getElementById('searchSector').addEventListener('change', filterData);
+    document.getElementById('searchID').addEventListener('input', filterData);
+    document.getElementById('searchMotivo').addEventListener('input', filterData);
+
+    // Carga Inicial
+    renderTable(paradasData);
+  </script>
 </body>
 </html>
