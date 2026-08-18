@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Asistencia y Salario</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Asistencia y Salario</h1>
+
+        <div id="quincena-display">
+            <p>Calculando salario de quincena...</p>
+        </div>
+
+        <div id="editing-message">
+            Estás editando el día: <span id="editing-date-display"></span>. Por favor, selecciona la información correcta.
+            <div class="btn-group">
+                <button class="secondary" onclick="cancelEditing()">Cancelar Edición</button>
+                <button class="delete-btn" id="delete-record-btn" onclick="deleteRecord()">Eliminar Registro</button>
+            </div>
+        </div>
+
+        <div id="step-select-turno" class="step-box">
+            <p>¿En qué turno estás trabajando hoy?</p>
+            <div class="btn-group">
+                <button class="secondary" onclick="selectTurno('manana')">Mañana (06hs)</button>
+                <button class="secondary" onclick="selectTurno('tarde')">Tarde (14hs)</button>
+                <button class="secondary" onclick="selectTurno('noche')">Noche (22hs)</button>
+            </div>
+        </div>
+
+        <div id="step-fichaje-status" class="step-box" style="display: none;">
+            <p>¿Fichaste temprano o tarde?</p>
+            <div class="btn-group">
+                <button onclick="fichajeStatus('temprano')">Temprano</button>
+                <button class="late" onclick="fichajeStatus('tarde')">Tarde</button>
+            </div>
+        </div>
+
+        <div id="step-input-hora" class="step-box" style="display: none;">
+            <p>Ingresa la hora exacta de tu ingreso:</p>
+            <div class="input-group">
+                <input type="time" id="input-hora-ingreso">
+            </div>
+            <div class="btn-group">
+                <button onclick="registerCustomEntryTime()">Registrar Hora</button>
+            </div>
+        </div>
+
+        <div id="step-select-category" class="step-box" style="display: none;">
+            <p>Por favor, selecciona tu categoría:</p>
+            <div class="btn-group">
+                <button class="category" onclick="selectCategory('A')">A</button>
+                <button class="category" onclick="selectCategory('B')">B</button>
+                <button class="category" onclick="selectCategory('C')">C</button>
+                <button class="category" onclick="selectCategory('D')">D</button>
+                <button class="category" onclick="selectCategory('E')">E</button>
+                <button class="category" onclick="selectCategory('F')">F</button>
+                <button class="category" onclick="selectCategory('G')">G</button>
+                <button class="category" onclick="selectCategory('H')">H</button>
+            </div>
+        </div>
+
+        <div id="step-extra-hours" class="step-box" style="display: none;">
+            <p>¿Realizaste horas extras hoy?</p>
+            <div class="btn-group">
+                <button onclick="handleExtraHours(true)">Sí</button>
+                <button class="secondary" onclick="handleExtraHours(false)">No</button>
+            </div>
+            <div class="input-group" id="extra-hours-input-group" style="display: none;">
+                <label for="input-extra-hours">¿Cuántas horas extras?</label>
+                <input type="number" id="input-extra-hours" min="1" max="16" value="1">
+                <button onclick="registerExtraHours()">Confirmar Extras</button>
+            </div>
+        </div>
+        
+        <p id="result"></p>
+
+        <div id="history">
+            <h2>Historial de Registros</h2>
+            <ul id="history-list">
+                </ul>
+        </div>
+    </div>
+
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button onclick="changeMonth(-1)">&#9664;</button>
+            <h3 id="current-month-year"></h3>
+            <button onclick="changeMonth(1)">&#9654;</button>
+        </div>
+        <div class="calendar-grid" id="calendar-weekdays">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+        </div>
+        <div class="calendar-grid" id="calendar-days">
+            </div>
+    </div>
+
+    <script>
+        // Elementos del DOM
+        const stepSelectTurno = document.getElementById('step-select-turno');
+        const stepFichajeStatus = document.getElementById('step-fichaje-status');
+        const stepInputHora = document.getElementById('step-input-hora');
+        const inputHoraIngreso = document.getElementById('input-hora-ingreso');
+        const stepSelectCategory = document.getElementById('step-select-category');
+        const stepExtraHours = document.getElementById('step-extra-hours');
+        const extraHoursInputGroup = document.getElementById('extra-hours-input-group');
+        const inputExtraHours = document.getElementById('input-extra-hours');
+        const resultDisplay = document.getElementById('result');
+        const historyList = document.getElementById('history-list');
+        const quincenaDisplay = document.getElementById('quincena-display');
+        const editingMessage = document.getElementById('editing-message');
+        const editingDateDisplay = document.getElementById('editing-date-display');
+        const deleteRecordBtn = document.getElementById('delete-record-btn');
+
+        const currentMonthYearDisplay = document.getElementById('current-month-year');
+        const calendarDaysGrid = document.getElementById('calendar-days');
+
+        // Variables de estado global
+        let selectedTurno = null;
+        let entryTime = null;
+        let selectedCategory = null;
+        let extraHoursMade = 0;
+
+        let editingDateKey = null;
+        let isEditingMode = false;
+
+        let currentCalendarDate = new Date();
+
+        // *** VALORES DE CONFIGURACIÓN - ¡AJUSTA ESTOS VALORES A TUS NECESIDADES! ***
+        const JORNADA_HORAS = 8;
+
+        const TABLA_SALARIAL = {
+            'A': {
+                'Junio': 2750, 'Julio': 2804, 'Agosto': 2858, 'Septiembre': 2912, 'Octubre': 2966, 'Noviembre': 3020
+            },
+            'B': {
+                'Junio': 2800, 'Julio': 2855, 'Agosto': 2910, 'Septiembre': 2965, 'Octubre': 3020, 'Noviembre': 3074
+            },
+            'C': {
+                'Junio': 2854, 'Julio': 2910, 'Agosto': 2966, 'Septiembre': 3022, 'Octubre': 3078, 'Noviembre': 3134
+            },
+            'D': {
+                'Junio': 2905, 'Julio': 2962, 'Agosto': 3019, 'Septiembre': 3076, 'Octubre': 3133, 'Noviembre': 3190
+            },
+            'E': {
+                'Junio': 2964, 'Julio': 3022, 'Agosto': 3080, 'Septiembre': 3138, 'Octubre': 3197, 'Noviembre': 3255
+            },
+            'F': {
+                'Junio': 3021, 'Julio': 3080, 'Agosto': 3140, 'Septiembre': 3199, 'Octubre': 3258, 'Noviembre': 3317
+            },
+            'G': {
+                'Junio': 3115, 'Julio': 3176, 'Agosto': 3237, 'Septiembre': 3298, 'Octubre': 3359, 'Noviembre': 3420
+            },
+            'H': {
+                'Junio': 3182, 'Julio': 3245, 'Agosto': 3307, 'Septiembre': 3370, 'Octubre': 3432, 'Noviembre': 3494
+            }
+        [span_0](start_span)};[span_0](end_span)
+
+        const SUMA_NO_REMUN = {
+            'Junio': 210000 + 105000,
+            'Julio': 210000,
+            'Agosto': 210000,
+            'Septiembre': 210000,
+            'Octubre': 210000,
+            'Noviembre': 210000
+        [span_1](start_span)};[span_1](end_span)
+
+        [span_2](start_span)// Tabla de Bonificación por Antigüedad[span_2](end_span)
+        // NOTA: La tabla proporcionada para antigüedad está incompleta (faltan Agosto, Octubre, Noviembre).
+        // Si un mes no tiene datos, se usará 0 como bonificación.
+        const TABLA_ANTIGUEDAD = {
+            '1 años': {'Junio': 25, 'Julio': 27, 'Septiembre': 28},
+            '3 años': {'Junio': 37, 'Julio': 39, 'Septiembre': 41},
+            '5 años': {'Junio': 50, 'Julio': 53, 'Septiembre': 56},
+            '7 años': {'Junio': 68, 'Julio': 72, 'Septiembre': 76},
+            '9 años': {'Junio': 81, 'Julio': 86, 'Septiembre': 91},
+            '12 años': {'Junio': 108, 'Julio': 114, 'Septiembre': 121},
+            '15 años': {'Junio': 130, 'Julio': 138, 'Septiembre': 146},
+            '18 años': {'Junio': 152, 'Julio': 161, 'Septiembre': 170},
+            '22 años': {'Junio': 175, 'Julio': 186, 'Septiembre': 196},
+            '26 años': {'Junio': 198, 'Julio': 210, 'Septiembre': 222},
+            '30 años': {'Junio': 217, 'Julio': 230, 'Septiembre': 243},
+            '35 años': {'Junio': 238, 'Julio': 252, 'Septiembre': 267},
+            '40 años': {'Junio': 261, 'Julio': 277, 'Septiembre': 292}
+        }; 
+
+        const ANTIGUEDAD_ANOS = 5; // <--- CONFIGURAR: Tus años de antigüedad para la bonificación. (Ej: 5)
+
+        const HORAS_ESTANDAR_INGRESO = {
+            'manana': '06:00',
+            'tarde': '14:00',
+            'noche': '22:00'
+        };
+
+        const MONTH_NAMES = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        const workRecords = JSON.parse(localStorage.getItem('workRecords')) || {};
+        // **********************************************
+
+        // Helper para formatear moneda sin decimales y con separador de miles
+        function formatCurrency(number) {
+            if (typeof number !== 'number') {
+                return number;
+            }
+            return new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(number);
+        }
+
+        // Función para obtener la bonificación por antigüedad
+        function getBonificacionAntiguedad(antiguedad_anos, currentMonthName) {
+            const antiguedadKey = `${antiguedad_anos} años`;
+            if (TABLA_ANTIGUEDAD[antiguedadKey] && TABLA_ANTIGUEDAD[antiguedadKey][currentMonthName]) {
+                return TABLA_ANTIGUEDAD[antiguedadKey][currentMonthName];
+            }
+            [span_3](start_span)console.warn(`No se encontró bonificación por antigüedad para ${antiguedadKey} en ${currentMonthName}.[span_3](end_span)`);
+            return 0; // Si no se encuentra, la bonificación es 0
+        }
+
+        // Función para ocultar todos los pasos de entrada
+        function hideAllSteps() {
+            stepSelectTurno.style.display = 'none';
+            stepFichajeStatus.style.display = 'none';
+            stepInputHora.style.display = 'none';
+            stepSelectCategory.style.display = 'none';
+            stepExtraHours.style.display = 'none';
+            extraHoursInputGroup.style.display = 'none';
+            editingMessage.style.display = 'none';
+        }
+
+        // Función para seleccionar el turno (Paso 1)
+        function selectTurno(turno) {
+            selectedTurno = turno;
+            hideAllSteps();
+            stepFichajeStatus.style.display = 'block';
+            resultDisplay.textContent = `Turno seleccionado: ${turno.charAt(0).toUpperCase() + turno.slice(1)}.`;
+        }
+
+        // Función para manejar el estado del fichaje (temprano/tarde) (Paso 2)
+        function fichajeStatus(status) {
+            let dateToUse;
+            if (isEditingMode && editingDateKey) {
+                // Si estamos editando, usamos la fecha del día seleccionado en el calendario (a mediodía local)
+                const [year, month, day] = editingDateKey.split('-').map(Number);
+                dateToUse = new Date(year, month - 1, day, 12, 0, 0); 
+            } else {
+                // Si no estamos editando, usamos la fecha y hora actuales
+                dateToUse = new Date();
+            }
+
+            if (status === 'temprano') {
+                const standardTime = HORAS_ESTANDAR_INGRESO[selectedTurno];
+                const [hours, minutes] = standardTime.split(':').map(Number);
+                
+                // Crea entryTime usando la fecha base y la hora estándar del turno
+                entryTime = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), hours, minutes, 0);
+
+                hideAllSteps();
+                stepSelectCategory.style.display = 'block';
+                resultDisplay.textContent = '¡Ingreso registrado! Ahora, selecciona tu categoría.';
+
+            } else { // Si es 'tarde'
+                hideAllSteps();
+                stepInputHora.style.display = 'block';
+                resultDisplay.textContent = 'Por favor, ingresa la hora exacta en la que ingresaste (Ej: 06:15).';
+            }
+        }
+
+        // Función para registrar la hora de ingreso personalizada (cuando fichó tarde) (Paso 2b)
+        function registerCustomEntryTime() {
+            const customTime = inputHoraIngreso.value;
+            if (!customTime) {
+                alert('Por favor, ingresa una hora válida (Ej: 06:15).');
+                return;
+            }
+
+            let dateToUse;
+            if (isEditingMode && editingDateKey) {
+                // Si estamos editando, usamos la fecha del día seleccionado en el calendario (a mediodía local)
+                const [year, month, day] = editingDateKey.split('-').map(Number);
+                dateToUse = new Date(year, month - 1, day, 12, 0, 0); 
+            } else {
+                // Si no estamos editando, usamos la fecha y hora actuales
+                dateToUse = new Date();
+            }
+
+            const [hours, minutes] = customTime.split(':').map(Number);
+            
+            // Crea entryTime usando la fecha base y la hora personalizada
+            entryTime = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), hours, minutes, 0); 
+
+            hideAllSteps();
+            stepSelectCategory.style.display = 'block';
+            resultDisplay.textContent = 'Hora de ingreso personalizada registrada. Ahora, selecciona tu categoría.';
+        }
+
+        // Función para seleccionar la categoría (Paso 3)
+        function selectCategory(category) {
+            selectedCategory = category;
+            hideAllSteps();
+            stepExtraHours.style.display = 'block';
+            resultDisplay.textContent = `Categoría seleccionada: ${category}. ¿Realizaste horas extras?`;
+        }
+
+        // Función para manejar las horas extras (Paso 4)
+        function handleExtraHours(hasExtras) {
+            if (hasExtras) {
+                extraHoursInputGroup.style.display = 'block';
+                resultDisplay.textContent = 'Por favor, ingresa la cantidad de horas extras realizadas.';
+            } else {
+                extraHoursMade = 0;
+                recordAttendance();
+            }
+        }
+
+        // Función para registrar la cantidad de horas extras
+        function registerExtraHours() {
+            const hours = parseInt(inputExtraHours.value);
+            if (isNaN(hours) || hours <= 0) {
+                alert('Por favor, ingresa un número válido de horas extras.');
+                return;
+            }
+            extraHoursMade = hours;
+            recordAttendance();
+        }
+
+        // Función principal para registrar asistencia y calcular salario
+        function recordAttendance() {
+            let recordDayDate;
+            if (isEditingMode && editingDateKey) {
+                // Si estamos en modo edición, usamos la fecha del día seleccionado en el calendario
+                const [year, month, day] = editingDateKey.split('-').map(Number);
+                recordDayDate = new Date(year, month - 1, day, 12, 0, 0); // Crear a mediodía local para evitar problemas de zona horaria
+            } else {
+                // Si no estamos en modo edición, usamos la fecha y hora de entryTime (que ya viene bien del formulario)
+                recordDayDate = entryTime || new Date();
+            }
+            
+            if (!selectedTurno || !selectedCategory || !entryTime) {
+                resultDisplay.textContent = 'Error: Faltan datos para el registro. Por favor, completa todos los pasos.';
+                if (!isEditingMode) {
+                    resetInterface();
+                }
+                return;
+            }
+
+            const currentMonthIndex = recordDayDate.getMonth(); // Usamos recordDayDate para obtener el mes
+            const currentMonthName = MONTH_NAMES[currentMonthIndex];
+
+            [span_4](start_span)const valorHoraBase = TABLA_SALARIAL[selectedCategory]?.[currentMonthName];[span_4](end_span)
+            [span_5](start_span)const bonificacionPorAntiguedad = getBonificacionAntiguedad(ANTIGUEDAD_ANOS, currentMonthName);[span_5](end_span)
+
+            if (valorHoraBase === undefined) {
+                resultDisplay.textContent = `Error: No se encontraron datos salariales para la categoría ${selectedCategory} en el mes de ${currentMonthName}. [span_6](start_span)Por favor, verifica la configuración.[span_6](end_span)`;
+                if (!isEditingMode) {
+                    resetInterface();
+                }
+                return;
+            }
+            
+            // Cálculo del salario diario base: (valor hora + antigüedad) x 8 horas
+            const salarioPorHora = valorHoraBase + bonificacionPorAntiguedad;
+            const salarioDiarioSinNoRemun = JORNADA_HORAS * salarioPorHora; // Este es el salario diario sin el no remunerativo ni extras
+
+            let salarioDiarioSoloHorasYExtras = salarioDiarioSinNoRemun; // Salario para calcular extras y luego presentismo
+
+            let extraHoursInfo = "";
+            if (extraHoursMade > 0) {
+                const valorHoraExtra = salarioPorHora * 1.5; // Las horas extras también usan el nuevo salarioPorHora
+                salarioDiarioSoloHorasYExtras += (extraHoursMade * valorHoraExtra);
+                extraHoursInfo = ` (+${extraHoursMade}hs extras)`;
+            }
+
+            const formattedEntryTime = entryTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const formattedDate = recordDayDate.toLocaleDateString('es-AR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+            const standardEntryHours = parseInt(HORAS_ESTANDAR_INGRESO[selectedTurno].split(':')[0]);
+            const standardEntryMinutes = parseInt(HORAS_ESTANDAR_INGRESO[selectedTurno].split(':')[1]);
+            const isEarlyEntry = (entryTime.getHours() < standardEntryHours || (entryTime.getHours() === standardEntryHours && entryTime.getMinutes() <= standardEntryMinutes));
+            const entryStatusText = isEarlyEntry ? 'Temprano' : 'Tarde';
+
+            // El plus diario (no remunerativo) no se incluye aquí, se suma al final en calculateQuincenaTotal
+            const recordText = `Fecha: ${formattedDate} - Ingreso: ${formattedEntryTime} - Estado: ${entryStatusText} - Turno: ${selectedTurno.charAt(0).toUpperCase() + selectedTurno.slice(1)} (${JORNADA_HORAS}hs)${extraHoursInfo} - Categoría: ${selectedCategory} - Valor Hora Base: ${formatCurrency(valorHoraBase)} - Bonificación Antigüedad: ${formatCurrency(bonificacionPorAntiguedad)} - Salario Diario Horas + Extras: ${formatCurrency(salarioDiarioSoloHorasYExtras)}`;
+            
+            resultDisplay.textContent = `¡Registro exitoso! ${recordText}`;
+
+            // Guardar en workRecords los valores separados para el cálculo final
+            saveWorkRecord(recordDayDate, selectedTurno, JORNADA_HORAS, extraHoursMade, formattedEntryTime, selectedCategory, valorHoraBase, bonificacionPorAntiguedad, salarioDiarioSinNoRemun, salarioDiarioSoloHorasYExtras);
+
+            addRecordToHistory(recordText);
+
+            resetInterface();
+            generateCalendar();
+            calculateQuincenaTotal();
+        }
+
+        // --- Funciones del Calendario ---
+        function generateCalendar() {
+            calendarDaysGrid.innerHTML = '';
+
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            currentMonthYearDisplay.textContent = `${MONTH_NAMES[month]} ${year}`;
+
+            const firstDayOfMonth = new Date(year, month, 1);
+            let startDay = firstDayOfMonth.getDay();
+            if (startDay === 0) startDay = 7;
+            startDay--; // Para que Lunes sea 0
+
+            for (let i = 0; i < startDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.classList.add('calendar-day');
+                calendarDaysGrid.appendChild(emptyDay);
+            }
+
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            const daysInMonth = lastDayOfMonth.getDate();
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('calendar-day');
+                
+                const currentDayDate = new Date(year, month, day);
+                const today = new Date();
+
+                if (currentDayDate.toDateString() === today.toDateString()) {
+                    dayElement.classList.add('today');
+                }
+
+                const dayNumberSpan = document.createElement('span');
+                dayNumberSpan.classList.add('day-number');
+                dayNumberSpan.textContent = day;
+                dayElement.appendChild(dayNumberSpan);
+
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                dayElement.setAttribute('data-date-key', dateKey);
+                
+                // Ahora todos los días son clickeables
+                dayElement.addEventListener('click', () => editDayRecord(dateKey));
+
+                if (workRecords[dateKey]) {
+                    dayElement.classList.add('recorded-day'); // Opcional: estilo para días con registro
+                    const record = workRecords[dateKey];
+                    const workedHoursSpan = document.createElement('span');
+                    workedHoursSpan.classList.add('worked-hours');
+                    workedHoursSpan.classList.add(record.turno);
+                    
+                    let displayHours = `${record.entrada} - ${record.salida}`;
+                    if (record.turno === 'noche' && record.entrada.split(':')[0] === HORAS_ESTANDAR_INGRESO.noche.split(':')[0]) {
+                         displayHours += ' (+1 día)';
+                    }
+                    
+                    workedHoursSpan.textContent = `${displayHours} (${record.horas_trabajadas}hs)`;
+                    dayElement.appendChild(workedHoursSpan);
+
+                    if (record.horas_extras > 0) {
+                        const extraHoursSpan = document.createElement('span');
+                        extraHoursSpan.classList.add('worked-hours', 'extra');
+                        extraHoursSpan.textContent = `+${record.horas_extras}hs extras`;
+                        dayElement.appendChild(extraHoursSpan);
+                    }
+                }
+                calendarDaysGrid.appendChild(dayElement);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+            generateCalendar();
+            calculateQuincenaTotal();
+        }
+
+        function saveWorkRecord(date, turno, jornadaHoras, extraHours, formattedEntryTime, category, valorHoraBase, bonificacionPorAntiguedad, salarioDiarioSinNoRemun, salarioDiarioSoloHorasYExtras) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateKey = `${year}-${month}-${day}`;
+
+            let exitDate = new Date(date.getTime());
+            exitDate.setHours(date.getHours() + jornadaHoras, date.getMinutes(), date.getSeconds());
+
+            const formattedExitTime = exitDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+            workRecords[dateKey] = {
+                turno: turno,
+                horas_trabajadas: jornadaHoras,
+                horas_extras: extraHours,
+                entrada: formattedEntryTime.substring(0,5),
+                salida: formattedExitTime,
+                category: category,
+                valor_hora_base: valorHoraBase,
+                bonificacion_antiguedad: bonificacionPorAntiguedad,
+                salario_diario_sin_no_remun: salarioDiarioSinNoRemun, // (Valor hora + antigüedad) * 8 horas
+                salario_diario_solo_horas_y_extras: salarioDiarioSoloHorasYExtras, // Incluye horas extras
+                day_of_week: date.getDay()
+            };
+            localStorage.setItem('workRecords', JSON.stringify(workRecords));
+            generateCalendar();
+        }
+
+        function addRecordToHistory(recordText) {
+            const listItem = document.createElement('li');
+            listItem.textContent = recordText;
+            historyList.prepend(listItem);
+        }
+
+        function calculateQuincenaTotal() {
+            const today = new Date();
+            const currentDay = today.getDate();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+
+            let quincenaStartDate, quincenaEndDate;
+
+            if (currentDay <= 15) {
+                quincenaStartDate = new Date(currentYear, currentMonth, 1, 12, 0, 0); // Mediodía para consistencia
+                quincenaEndDate = new Date(currentYear, currentMonth, 15, 12, 0, 0); // Mediodía para consistencia
+            } else {
+                quincenaStartDate = new Date(currentYear, currentMonth, 16, 12, 0, 0); // Mediodía para consistencia
+                quincenaEndDate = new Date(currentYear, currentMonth + 1, 0, 12, 0, 0); // Mediodía para consistencia
+            }
+
+            let totalSalarioSinNoRemunYPresentismo = 0; // Acumula (valor hora + antigüedad) * 8h + extras
+            let totalSumaNoRemunerativaQuincena = 0; // Acumula la suma no remunerativa
+            let daysWorkedInQuincena = 0;
+
+            for (const dateKey in workRecords) {
+                const [rYear, rMonth, rDay] = dateKey.split('-').map(Number);
+                const recordDateLocalNoon = new Date(rYear, rMonth - 1, rDay, 12, 0, 0);
+
+                if (recordDateLocalNoon >= quincenaStartDate && recordDateLocalNoon <= quincenaEndDate) {
+                    const record = workRecords[dateKey];
+                    
+                    if (record.salario_diario_solo_horas_y_extras !== undefined) {
+                        totalSalarioSinNoRemunYPresentismo += record.salario_diario_solo_horas_y_extras;
+                        daysWorkedInQuincena++;
+                    }
+
+                    // Suma no remunerativa para el mes del registro
+                    const recordMonthIndex = recordDateLocalNoon.getMonth();
+                    const recordMonthName = MONTH_NAMES[recordMonthIndex];
+                    [span_7](start_span)const plusDiarioForDay = SUMA_NO_REMUN[recordMonthName];[span_7](end_span)
+                    if (plusDiarioForDay !== undefined) {
+                        totalSumaNoRemunerativaQuincena += plusDiarioForDay;
+                    } else {
+                        [span_8](start_span)console.warn(`No se encontró Suma no remun. para el mes de ${recordMonthName}.[span_8](end_span)`);
+                    }
+                }
+            }
+
+            // Calcular presentismo sobre el total de horas + extras
+            const presentismoPorcentaje = 0.20; [span_9](start_span)//[span_9](end_span) (asumiendo 0 ausencias por ahora, pendiente de tu confirmación)
+            const montoPresentismo = totalSalarioSinNoRemunYPresentismo * presentismoPorcentaje;
+            const totalSalarioConPresentismo = totalSalarioSinNoRemunYPresentismo + montoPresentismo;
+
+            // Sumar la suma no remunerativa al final
+            const salarioFinalQuincena = totalSalarioConPresentismo + totalSumaNoRemunerativaQuincena;
+
+            quincenaDisplay.innerHTML = `
+                <p><strong>Salario Estimado esta Quincena (${quincenaStartDate.toLocaleDateString('es-AR')} - ${quincenaEndDate.toLocaleDateString('es-AR')})</strong></p>
+                <p>Total de Horas Trabajadas y Horas Extras: <strong>${formatCurrency(totalSalarioSinNoRemunYPresentismo)}</strong></p>
+                <p>Monto de Presentismo (20%): <strong>${formatCurrency(montoPresentismo)}</strong></p>
+                <p>Subtotal con Presentismo: <strong>${formatCurrency(totalSalarioConPresentismo)}</strong></p>
+                <p>Suma No Remunerativa: <strong>${formatCurrency(totalSumaNoRemunerativaQuincena)}</strong></p>
+                <p>Salario Total Estimado de la Quincena: <strong>${formatCurrency(salarioFinalQuincena)}</strong> (${daysWorkedInQuincena} días trabajados)</p>
+            `;
+        }
+
+        // Función para iniciar la edición de un registro de día (o agregar uno nuevo para ese día)
+        function editDayRecord(dateKey) {
+            hideAllSteps(); // Ocultar todos los pasos de entrada normales
+            editingMessage.style.display = 'block'; // Mostrar el mensaje de edición
+
+            // Parse dateKey y crea una fecha a mediodía local para asegurar la fecha correcta en la visualización
+            const [year, month, day] = dateKey.split('-').map(Number);
+            const displayDate = new Date(year, month - 1, day, 12, 0, 0); // Fecha a mediodía local
+
+            editingDateDisplay.textContent = displayDate.toLocaleDateString('es-AR');
+
+            isEditingMode = true;
+            editingDateKey = dateKey; // Mantener la clave string para acceder a workRecords
+
+            const record = workRecords[dateKey];
+
+            if (record) {
+                // Si existe un registro, pre-llenar las variables globales para la edición
+                selectedTurno = record.turno;
+                // Reconstruir entryTime usando la fecha base del registro y la hora guardada
+                const [recordedHours, recordedMinutes] = record.entrada.split(':').map(Number);
+                entryTime = new Date(displayDate.getFullYear(), displayDate.getMonth(), displayDate.getDate(), recordedHours, recordedMinutes, 0);
+                
+                selectedCategory = record.category;
+                extraHoursMade = record.horas_extras;
+                inputHoraIngreso.value = record.entrada; // Pre-llenar el campo de hora si existe
+                inputExtraHours.value = record.horas_extras; // Pre-llenar horas extras
+                resultDisplay.textContent = `Modo edición activado para el día ${displayDate.toLocaleDateString('es-AR')}. Valores actuales cargados.`;
+                deleteRecordBtn.style.display = 'inline-block'; // Mostrar botón de eliminar
+            } else {
+                // Si no existe un registro, reiniciar variables para una nueva entrada
+                selectedTurno = null;
+                entryTime = null; // Se establecerá cuando el usuario ingrese la hora
+                selectedCategory = null;
+                extraHoursMade = 0;
+                inputHoraIngreso.value = ''; // Limpiar cualquier valor previo
+                inputExtraHours.value = '1'; // Valor por defecto
+                resultDisplay.textContent = `Agregando registro para el día ${displayDate.toLocaleDateString('es-AR')}. Por favor, selecciona el turno.`;
+                deleteRecordBtn.style.display = 'none'; // Ocultar botón de eliminar si no hay registro
+            }
+
+            // Siempre mostrar el primer paso de selección de turno para iniciar la entrada/edición
+            stepSelectTurno.style.display = 'block';
+        }
+
+        function cancelEditing() {
+            isEditingMode = false;
+            editingDateKey = null;
+            resetInterface();
+            resultDisplay.textContent = 'Edición cancelada.';
+            deleteRecordBtn.style.display = 'none'; // Asegurarse de ocultar el botón al cancelar
+        }
+
+        // Nueva función para eliminar un registro
+        function deleteRecord() {
+            if (!editingDateKey) {
+                resultDisplay.textContent = 'Error: No hay un día seleccionado para eliminar.';
+                return;
+            }
+
+            // Confirmar con el usuario antes de eliminar
+            if (confirm(`¿Estás seguro de que quieres eliminar el registro del día ${new Date(editingDateKey).toLocaleDateString('es-AR')}? Esta acción no se puede deshacer.`)) {
+                delete workRecords[editingDateKey]; // Eliminar el registro del objeto
+                localStorage.setItem('workRecords', JSON.stringify(workRecords)); // Actualizar el almacenamiento local
+
+                resultDisplay.textContent = `Registro del día ${new Date(editingDateKey).toLocaleDateString('es-AR')} eliminado correctamente.`;
+                
+                resetInterface(); // Restablecer el formulario y ocultar el mensaje de edición
+                generateCalendar(); // Actualizar la visualización del calendario
+                calculateQuincenaTotal(); // Recalcular el salario de la quincena
+            } else {
+                resultDisplay.textContent = 'Eliminación cancelada.';
+            }
+        }
+
+        function resetInterface() {
+            selectedTurno = null;
+            entryTime = null;
+            selectedCategory = null;
+            extraHoursMade = 0;
+            isEditingMode = false;
+            editingDateKey = null;
+
+            hideAllSteps();
+            stepSelectTurno.style.display = 'block';
+            inputHoraIngreso.value = '';
+            inputExtraHours.value = '1';
+            resultDisplay.textContent = '';
+            deleteRecordBtn.style.display = 'none'; // Asegurarse de que el botón esté oculto al reiniciar la interfaz
+        }
+
+        resetInterface();
+        generateCalendar();
+        calculateQuincenaTotal();
+    </script>
+</body>
+</html>
