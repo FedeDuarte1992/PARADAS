@@ -1,168 +1,195 @@
+/* CSS: Estilos modernos y responsivos */
+:root {
+  --primary: #1f4e78;
+  --secondary: #2f5597;
+  --bg: #f4f6f9;
+  --card-bg: #ffffff;
+  --text: #333333;
+  --border: #d9d9d9;
+  --accent: #28a745;
+}
 
-    /* CSS: Estilos modernos y responsivos */
-    :root {
-      --primary: #1f4e78;
-      --secondary: #2f5597;
-      --bg: #f4f6f9;
-      --card-bg: #ffffff;
-      --text: #333333;
-      --border: #d9d9d9;
-      --accent: #28a745;
-    }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
 
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
+.container {
+  width: 100%;
+  max-width: 1400px;
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+}
 
-    .container {
-      width: 100%;
-      max-width: 1400px; /* Aumentado ligeramente para tablas anchas */
-      background-color: var(--card-bg);
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      padding: 25px;
-    }
+/* ============================
+   Panel de Búsqueda y Filtros
+   ============================ */
+.search-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
+  background: #eef2f7;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #dcdfe6;
+}
 
-    /* Panel de Búsqueda y Filtros */
-    .search-panel {
-      display: grid;
-      /* Si hay muchos inputs, permitimos que se ajusten, pero damos un mínimo de espacio */
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 20px; /* Aumentado el gap para evitar que se vean pegados */
-      margin-bottom: 25px;
-      background: #eef2f7;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #dcdfe6;
-    }
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
 
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-    }
+.filter-group label {
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: var(--primary);
+}
 
-    .filter-group label {
-      font-size: 0.85rem;
-      font-weight: bold;
-      margin-bottom: 5px;
-      color: var(--primary);
-    }
+.filter-group input,
+.filter-group select {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border 0.2s;
+  width: 100%;
+}
 
-    .filter-group input,
-    .filter-group select {
-      /* CORRECCIÓN 1: Ancho mínimo para que no desaparezcan en la rejilla */
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border 0.2s;
-    }
+.filter-group input:focus,
+.filter-group select:focus {
+  border-color: var(--secondary);
+}
 
-    .filter-group input:focus,
-    .filter-group select:focus {
-      border-color: var(--secondary);
-    }
+.btn-reset {
+  grid-column: 1 / -1;
+  padding: 12px;
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
 
-    .btn-reset {
-      grid-column: 1 / -1; /* Ocupa todo el ancho de la fila */
-      padding: 12px;
-      background-color: var(--secondary);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+.btn-reset:hover {
+  background-color: var(--primary);
+}
 
-    .btn-reset:hover {
-      background-color: var(--primary);
-    }
+/* ============================
+   Barra de estado
+   ============================ */
+.status-bar {
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    /* Barra de estado */
-    .status-bar {
-      margin-bottom: 15px;
-      font-size: 0.9rem;
-      color: #666;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+/* ============================
+   Contenedor de Tabla (estabilizado)
+   ============================ */
+.table-container {
+  height: 500px;
+  overflow-y: auto;      /* scroll vertical cuando hay muchos registros */
+  overflow-x: hidden;    /* sin scroll horizontal */
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  /* Estabiliza el ancho de la barra de scroll para que no "salte" el layout */
+  scrollbar-gutter: stable;
+}
 
-    /* CORRECCIÓN 2: Contenedor de Tabla Estabilizado */
-    /* Definir altura fija para evitar colapso vertical si los elementos son pocos,
-       o scroll vertical necesario. */
-    .table-container {
-      height: 500px; /* Altura fija obligatoria para controlar el layout */
-      overflow: hidden; /* Ocultar scroll innecesario para forzar la estructura de columnas */
-      border: 1px solid var(--border);
-      border-radius: 6px;
-    }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;   /* CLAVE: anchos fijos, no dependen del contenido */
+  text-align: left;
+}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
+/* Anchos fijos vía colgroup (no se recalculan al filtrar) */
+col.col-sector { width: 25%; }
+col.col-id     { width: 15%; }
+col.col-motivo { width: 60%; }
 
-    th {
-      position: sticky;
-      top: 0;
-      background-color: var(--secondary);
-      color: white;
-      padding: 12px;
-      font-size: 0.95rem;
-      z-index: 2; /* Asegurar que quede encima de los otros elementos */
-    }
+th {
+  position: sticky;
+  top: 0;
+  background-color: var(--secondary);
+  color: white;
+  padding: 12px;
+  font-size: 0.95rem;
+  z-index: 2;
+}
 
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.9rem;
-    }
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-    tbody tr:nth-child(even) {
-      background-color: #f8f9fa;
-    }
+/* El motivo hace wrap en vez de ellipsis (se lee completo) */
+td.col-motivo,
+td:nth-child(3) {
+  white-space: normal;
+  word-break: break-word;
+  text-overflow: clip;
+}
 
-    tbody tr:hover {
-      background-color: #e8f0fe;
-    }
+tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
 
-    /* CORRECCIÓN 3: Anchos explícitos para columnas (Evita que se achique a la mitad) */
-    th.col-sector, td.col-sector { width: 25%; }
-    th.col-id, td.col-id { width: 15%; }
-    th.col-motivo, td.col-motivo { width: 60%; } /* Ajustado para compensar las otras dos */
+tbody tr:hover {
+  background-color: #e8f0fe;
+}
 
-    .badge-id {
-      background-color: var(--primary);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-family: monospace;
-      font-size: 0.95rem;
-    }
+.badge-id {
+  background-color: var(--primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-family: monospace;
+  font-size: 0.95rem;
+}
 
-    .no-results {
-      text-align: center;
-      padding: 30px;
-      color: #888;
-      font-style: italic;
-    }
+.no-results {
+  text-align: center;
+  padding: 30px;
+  color: #888;
+  font-style: italic;
+  white-space: normal;
+}
 
-    @media (max-width: 600px) {
-      .container { padding: 1
-
+/* ============================
+   Responsive
+   ============================ */
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .container { padding: 12px; }
+  .search-panel { grid-template-columns: 1fr; gap: 12px; }
+  .table-container { height: 60vh; }
+  col.col-sector { width: 35%; }
+  col.col-id     { width: 20%; }
+  col.col-motivo { width: 45%; }
+}
