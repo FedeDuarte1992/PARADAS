@@ -102,4 +102,67 @@
     }
 
     /* CORRECCIÓN 2: Contenedor de Tabla Estabilizado */
-    /* Definir altura fija para evitar colapso vertical si los elementos son pocos,*
+    /* Definir altura fija para evitar colapso vertical si los elementos son pocos,
+       o scroll vertical necesario. */
+    .table-container {
+      height: 500px; /* Altura fija obligatoria para controlar el layout */
+      overflow: hidden; /* Ocultar scroll innecesario para forzar la estructura de columnas */
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background-color: var(--secondary);
+      color: white;
+      padding: 12px;
+      font-size: 0.95rem;
+      z-index: 2; /* Asegurar que quede encima de los otros elementos */
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    tbody tr:hover {
+      background-color: #e8f0fe;
+    }
+
+    /* CORRECCIÓN 3: Anchos explícitos para columnas (Evita que se achique a la mitad) */
+    th.col-sector, td.col-sector { width: 25%; }
+    th.col-id, td.col-id { width: 15%; }
+    th.col-motivo, td.col-motivo { width: 60%; } /* Ajustado para compensar las otras dos */
+
+    .badge-id {
+      background-color: var(--primary);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 30px;
+      color: #888;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 1
+
