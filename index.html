@@ -7,10 +7,8 @@
   <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
-
-  
-
-    <!-- Controles de Búsqueda -->
+   <div class="container"> 
+<!-- Controles de Búsqueda -->
     <div class="search-panel">
       <div class="filter-group">
         <label for="searchGeneral">Búsqueda General</label>
@@ -43,25 +41,28 @@
     </div>
 
     <!-- Tabla -->
-   <div class="table-container">
-  <table>
-    <colgroup>
-      <col class="col-sector">
-      <col class="col-id">
-      <col class="col-motivo">
-    </colgroup>
-    <thead>
-      <tr>
-        <th>Sector</th>
-        <th style="text-align:center;">ID Parada</th>
-        <th>Motivo</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody">
-      <!-- Carga dinámica vía JS -->
-    </tbody>
-  </table>
-</div>
+    <div class="table-container">
+      <table>
+        <colgroup>
+          <col class="col-sector">
+          <col class="col-id">
+          <col class="col-motivo">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Sector</th>
+            <th style="text-align:center;">ID Parada</th>
+            <th>Motivo</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Carga dinámica vía JS -->
+        </tbody>
+      </table>
+    </div>
+
+  </div> <!-- ESTE CIERRE FALTABA -->
+
 
   <script>
     // JS: Base de Datos completa (Códigos 4000 al 4500)
