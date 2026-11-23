@@ -43,21 +43,25 @@
     </div>
 
     <!-- Tabla -->
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 25%;">Sector</th>
-            <th style="width: 15%; text-align: center;">ID Parada</th>
-            <th style="width: 60%;">Motivo</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <!-- Carga dinámica vía JS -->
-        </tbody>
-      </table>
-    </div>
-  </div>
+   <div class="table-container">
+  <table>
+    <colgroup>
+      <col class="col-sector">
+      <col class="col-id">
+      <col class="col-motivo">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Sector</th>
+        <th style="text-align:center;">ID Parada</th>
+        <th>Motivo</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <!-- Carga dinámica vía JS -->
+    </tbody>
+  </table>
+</div>
 
   <script>
     // JS: Base de Datos completa (Códigos 4000 al 4500)
